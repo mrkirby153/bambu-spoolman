@@ -7,7 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
+loguru = "^0.7.3"
 
+[tool.poetry.scripts]
+bambu-spoolman = "bambu_spoolman:main"
 
 [build-system]
 requires = ["poetry-core"]
