@@ -1,4 +1,6 @@
 import requests
+import os
+from loguru import logger
 
 
 class SpoolmanClient:
@@ -65,3 +67,12 @@ class SpoolmanClient:
         if query_string:
             return f"{self.endpoint}/api/v1/{route}?{query_string}"
         return f"{self.endpoint}/api/v1/{route}"
+
+
+def new_client(url=None) -> SpoolmanClient:
+    """
+    Create a new Spoolman client
+    """
+    if url is None:
+        url = os.environ.get("SPOOLMAN_URL")
+    return SpoolmanClient(url)

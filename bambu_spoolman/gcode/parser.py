@@ -45,6 +45,9 @@ def parse_gcode(gcode):
 
 
 def evaluate_gcode(gcode):
+    """
+    Evaluate the gcode and return the filament usage (in mm) per layer
+    """
     operations = parse_gcode(gcode)
     logger.info(f"Found {len(operations)} operations")
 

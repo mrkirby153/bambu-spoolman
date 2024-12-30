@@ -1,0 +1,8 @@
+services:
+  spoolman:
+    image: ghcr.io/donkie/spoolman:latest
+    restart: unless-stopped
+    volumes:
+      - ./data:/home/app/.local/share/spoolman
+    ports:
+      - "7912:8000"
