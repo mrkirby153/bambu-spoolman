@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.13"
 loguru = "^0.7.3"
 requests = "^2.32.3"
+flask = "^3.1.0"
 
 [tool.poetry.scripts]
 bambu-spoolman = "bambu_spoolman:main"
