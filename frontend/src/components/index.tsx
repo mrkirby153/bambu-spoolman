@@ -1,22 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import useSettings from "@app/hooks/useSettings";
+
+function AnotherComponent() {
+  const settings = useSettings();
+  return <div>Data: {JSON.stringify(settings.data)}</div>;
+}
 
 export default function Index() {
-  const loadSettings = async () => {
-    const response = await fetch("/api/settings");
-    if (!response.ok) {
-      throw new Error("Failed to fetch settings");
-    }
-    return response.json();
-  };
+  const settings = useSettings();
 
-  const query = useQuery({
-    queryKey: ["settings"],
-    queryFn: loadSettings,
-  });
-
-  if (query.isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  return <div>Trays: {query.data.tray_count}</div>;
+  return (
+    <>
+      <AnotherComponent />
+      <div>Trays: {settings.data.tray_count}</div>
+    </>
+  );
 }
