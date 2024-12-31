@@ -119,7 +119,7 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
   return (
     <div className="border border-black p-2 rounded-sm">
       <div className="text-xl">AMS {props.id + 1}</div>
-      <div className="flex space-x-2 pt-2">{slots}</div>
+      <div className="flex space-x-2 pt-2 flex-col sm:flex-row">{slots}</div>
     </div>
   );
 }
