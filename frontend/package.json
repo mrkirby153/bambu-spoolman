@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.11",
+    "@yudiel/react-qr-scanner": "^2.1.0",
     "autoprefixer": "^10.4.20",
     "classnames": "^2.5.1",
     "postcss": "^8.4.49",
@@ -24,6 +25,7 @@
     "@tanstack/react-query-devtools": "^5.62.11",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
