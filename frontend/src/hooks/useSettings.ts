@@ -14,6 +14,7 @@ type Trays = {
 export type Settings = {
   tray_count: number;
   trays: Trays;
+  active_tray: number | null;
 };
 
 export default function useSettings() {

@@ -1,8 +1,10 @@
 import { MultiColorDirection, Spool } from "@app/types";
-import { useQuery } from "@tanstack/react-query";
 import styles from "./AmsConfiguration.module.css";
 import classNames from "classnames";
 import useSettings from "@app/hooks/useSettings";
+import { usePopup } from "@app/stores/popupStore";
+import SpoolChangeModel from "./models/SpoolChangeModel";
+import { useSpoolQuery } from "@app/hooks/spool";
 
 export type AmsConfigurationProps = {
   id: number;
@@ -12,6 +14,7 @@ type AmsSlotProps = {
   spoolId: number;
   amsId: number;
   slotId: number;
+  active: boolean;
 };
 
 function getBackgroundColor(spool: Spool) {
@@ -79,26 +82,24 @@ function AmsSpoolChip({ spool, active }: SpoolChipProps) {
 }
 
 function AmsSlot(props: AmsSlotProps) {
-  const spool = useQuery<Spool | null>({
-    queryKey: ["spool", props.spoolId],
-    queryFn: async () => {
-      if (props.spoolId == -1) {
-        return null;
+  const spool = useSpoolQuery(props.spoolId);
+
+  const { open } = usePopup();
+
+  const openChangeModel = () => {
+    open(
+      <SpoolChangeModel trayId={props.slotId} initialSpoolId={props.spoolId} />,
+      {
+        title: "Update Spool",
       }
-      const response = await fetch(`/api/spool/${props.spoolId}`);
-      if (!response.ok) {
-        return null;
-      }
-      return response.json();
-    },
-    retry: false,
-  });
+    );
+  };
 
   const resolvedSpool: Spool | null = spool.data != null ? spool.data : null;
   return (
-    <>
-      <AmsSpoolChip spool={resolvedSpool} active={false} />
-    </>
+    <div onClick={openChangeModel} className="cursor-pointer">
+      <AmsSpoolChip spool={resolvedSpool} active={props.active} />
+    </div>
   );
 }
 
@@ -112,7 +113,13 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
   for (let i = start; i < end; i++) {
     const spool = trays[i.toString()] || -1;
     slots.push(
-      <AmsSlot key={i} amsId={props.id} slotId={i - start} spoolId={spool} />
+      <AmsSlot
+        key={i}
+        amsId={props.id}
+        slotId={i}
+        spoolId={spool}
+        active={i == settings.data?.active_tray}
+      />
     );
   }
 

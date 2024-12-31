@@ -14,7 +14,7 @@ interface PopupStore {
   open: (data: React.ReactNode, properties?: PopupProperties) => void;
 }
 
-export const usePopupStore = create<PopupStore>((set) => ({
+export const usePopup = create<PopupStore>((set) => ({
   isOpen: false,
   data: null,
   properties: null,

@@ -1,7 +1,7 @@
-import { usePopupStore } from "@app/stores/popupStore";
+import { usePopup } from "@app/stores/popupStore";
 
 export default function Popup() {
-  const { isOpen, data, close, properties } = usePopupStore();
+  const { isOpen, data, close, properties } = usePopup();
 
   if (!isOpen) {
     return null;
