@@ -55,19 +55,24 @@ type SpoolChipProps = {
 function AmsSpoolChip({ spool, active }: SpoolChipProps) {
   const materialName = spool?.filament.material || "?";
 
+  let percentage = 100;
+  if (spool && spool.remaining_length && spool.used_length) {
+    const remainingLength = spool.remaining_length || 1;
+    const usedLength = spool.used_length || 1;
+    percentage = (remainingLength / (remainingLength + usedLength)) * 100;
+  }
+
   return (
     <div className="flex flex-col items-center">
-      <div
-        className={classNames(
-          "w-[60px]",
-          "h-[60px]",
-          active ? styles.active : styles.inactive
-        )}
-        style={{
-          background: spool ? getBackgroundColor(spool) : undefined,
-          content: "bla",
-        }}
-      />
+      <div className={classNames(active ? styles.active : styles.inactive)}>
+        <div
+          className={classNames("w-[60px]", "h-[60px]")}
+          style={{
+            clipPath: `inset(${100 - percentage}% 0 0 0)`,
+            background: spool ? getBackgroundColor(spool) : undefined,
+          }}
+        />
+      </div>
       <span>{materialName}</span>
     </div>
   );
