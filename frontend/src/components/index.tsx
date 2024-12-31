@@ -1,17 +1,12 @@
-import useSettings from "@app/hooks/useSettings";
-
-function AnotherComponent() {
-  const settings = useSettings();
-  return <div>Data: {JSON.stringify(settings.data)}</div>;
-}
+import Configuration from "./Configuration";
 
 export default function Index() {
-  const settings = useSettings();
-
   return (
     <>
-      <AnotherComponent />
-      <div>Trays: {settings.data.tray_count}</div>
+      <div className="container mx-auto p-4">
+        <h1 className="text-3xl text-center">Bambu Spoolman Integration</h1>
+        <Configuration />
+      </div>
     </>
   );
 }
