@@ -44,6 +44,8 @@ class SpoolmanClient:
         Get a specific spool by ID
         """
         response = requests.get(self._make_api_route(f"spool/{spool_id}"))
+        if response.status_code != 200:
+            return None
         return response.json()
 
     def consume_spool(self, spool_id, *, length=None, weight=None):

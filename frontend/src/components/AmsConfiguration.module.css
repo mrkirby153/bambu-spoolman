@@ -1,0 +1,7 @@
+.active {
+  @apply border-yellow-500 border-2;
+}
+
+.inactive {
+  @apply border-black border-2;
+}

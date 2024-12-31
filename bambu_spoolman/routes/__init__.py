@@ -21,7 +21,10 @@ def spools():
 
 @blueprint.route("/spool/<spool_id>")
 def spool(spool_id):
-    return g.spoolman.get_spool(spool_id)
+    spool = g.spoolman.get_spool(spool_id)
+    if spool is None:
+        return {"status": "error", "message": "Spool not found"}, 404
+    return spool
 
 
 @blueprint.route("/settings", methods=["GET"])

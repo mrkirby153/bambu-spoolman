@@ -8,8 +8,16 @@ async function load() {
   return response.json();
 }
 
+type Trays = {
+  [key: string]: number;
+};
+export type Settings = {
+  tray_count: number;
+  trays: Trays;
+};
+
 export default function useSettings() {
-  return useQuery({
+  return useQuery<Settings>({
     queryKey: ["settings"],
     queryFn: load,
   });

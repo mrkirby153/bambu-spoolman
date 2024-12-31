@@ -7,7 +7,7 @@ function amsCount(trayCount: number) {
 
 export default function Configuration() {
   const settings = useSettings();
-  const trayCount = settings.isLoading ? 4 : settings.data.tray_count;
+  const trayCount = settings.data?.tray_count || 0;
   const ams = amsCount(trayCount);
 
   const amsComponents = [];
@@ -17,10 +17,8 @@ export default function Configuration() {
 
   return (
     <>
-      <div>Configured AMS: {ams}</div>
-
       <h2 className="text-2xl">AMS Configuration</h2>
-      <div>{amsComponents}</div>
+      <div className="flex flex-col gap-3 md:flex-row">{amsComponents}</div>
     </>
   );
 }
