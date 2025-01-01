@@ -5,7 +5,11 @@ import { Spool } from "@app/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Suspense, useState } from "react";
 import AmsSpoolChip from "../AmsSpoolChip";
-import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
+import {
+  IDetectedBarcode,
+  Scanner,
+  useDevices,
+} from "@yudiel/react-qr-scanner";
 
 export type FilamentChangeModelProps = {
   trayId: number;
@@ -95,6 +99,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
       close();
     },
   });
+  const cameras = useDevices();
 
   const [scan, setScan] = useState(false);
 
@@ -118,7 +123,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
 
   const toDisplay = scan ? (
     <div className="p-3">
-      <Scanner onScan={handleScan} />
+      <Scanner onScan={handleScan} formats={["qr_code"]} />
     </div>
   ) : (
     <SpoolDetails spoolId={debounced} />
@@ -144,12 +149,14 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           <div className="text-red-500">{updateMutation.error?.message}</div>
         )}
       </div>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mt-2"
-        onClick={() => setScan(!scan)}
-      >
-        Scan QR Code
-      </button>
+      {cameras.length != 0 && (
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mt-2 disabled:bg-blue-200 disabled:cursor-not-allowed"
+          onClick={() => setScan(!scan)}
+        >
+          Scan QR Code
+        </button>
+      )}
 
       {toDisplay}
 
