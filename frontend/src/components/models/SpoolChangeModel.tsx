@@ -3,13 +3,14 @@ import { useSpoolQuery } from "@app/hooks/spool";
 import { usePopup } from "@app/stores/popupStore";
 import { Spool } from "@app/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import AmsSpoolChip from "../AmsSpoolChip";
 import {
   IDetectedBarcode,
   Scanner,
   useDevices,
 } from "@yudiel/react-qr-scanner";
+import { create } from "zustand";
 
 export type FilamentChangeModelProps = {
   trayId: number;
@@ -19,6 +20,16 @@ export type FilamentChangeModelProps = {
 type SpoolInformationProps = {
   spool: Spool;
 };
+
+type ChangeStore = {
+  error: string | null;
+  setError(error: string | null): void;
+};
+
+const useChangeStore = create<ChangeStore>((set) => ({
+  error: null,
+  setError: (error) => set({ error }),
+}));
 
 function mmToMeter(mm: number) {
   return mm / 1000;
@@ -71,6 +82,7 @@ const spoolmanRegex = /web\+spoolman:s-(\d+)/;
 
 export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const { close } = usePopup();
+  const { error, setError } = useChangeStore();
   const [spoolId, setSpoolId] = useState<number | null>(props.initialSpoolId);
   const debounced = useDebounce(spoolId, 500);
   const { data: spoolData } = useSpoolQuery(debounced);
@@ -100,8 +112,13 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     },
   });
   const cameras = useDevices();
-
   const [scan, setScan] = useState(false);
+
+  useEffect(() => {
+    if (updateMutation.error) {
+      setError(updateMutation.error.message);
+    }
+  }, [updateMutation.error, setError]);
 
   const updateTray = () => {
     updateMutation.mutate({ trayId: props.trayId, spoolId: debounced });
@@ -110,20 +127,31 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const handleScan = (result: IDetectedBarcode[]) => {
     const rawText = result[0].rawValue;
     const urlMatch = rawText.match(urlRegex);
+    const spoolmanMatch = rawText.match(spoolmanRegex);
     if (urlMatch) {
       setSpoolId(Number(urlMatch[1]));
-    }
-    const spoolmanMatch = rawText.match(spoolmanRegex);
-    if (spoolmanMatch) {
+    } else if (spoolmanMatch) {
       setSpoolId(Number(spoolmanMatch[1]));
+    } else {
+      setError("Invalid QR Code");
+      setScan(false);
+      return;
     }
     setScan(false);
+    setError(null);
     updateMutation.reset();
   };
 
   const toDisplay = scan ? (
     <div className="p-3">
-      <Scanner onScan={handleScan} formats={["qr_code"]} />
+      <Scanner
+        onScan={handleScan}
+        formats={["qr_code"]}
+        components={{
+          audio: false,
+          torch: false,
+        }}
+      />
     </div>
   ) : (
     <SpoolDetails spoolId={debounced} />
@@ -131,6 +159,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
 
   const onSpoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateMutation.reset();
+    setError(null);
     setSpoolId(Number(e.target.value));
   };
 
@@ -145,9 +174,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           value={spoolId?.toString()}
           onChange={onSpoolIdChange}
         />
-        {updateMutation.isError && (
-          <div className="text-red-500">{updateMutation.error?.message}</div>
-        )}
+        {error && <div className="text-red-500">{error}</div>}
       </div>
       {cameras.length != 0 && (
         <button
