@@ -71,8 +71,25 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const debounced = useDebounce(spoolId, 500);
   const { data: spoolData } = useSpoolQuery(debounced);
   const queryClient = useQueryClient();
-  const updateMutation = useMutation({
-    mutationFn: async () => {},
+  const updateMutation = useMutation<
+    void,
+    Error,
+    {
+      trayId: number;
+      spoolId: number | null;
+    }
+  >({
+    mutationFn: async ({ trayId, spoolId }) => {
+      const result = await fetch(`/api/tray/${trayId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spool_id: spoolId }),
+      });
+      if (!result.ok) {
+        const error = await result.json();
+        throw new Error(error.message);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       close();
@@ -82,8 +99,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const [scan, setScan] = useState(false);
 
   const updateTray = () => {
-    console.log("Updating tray to spool", debounced);
-    updateMutation.mutate();
+    updateMutation.mutate({ trayId: props.trayId, spoolId: debounced });
   };
 
   const handleScan = (result: IDetectedBarcode[]) => {
@@ -97,6 +113,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
       setSpoolId(Number(spoolmanMatch[1]));
     }
     setScan(false);
+    updateMutation.reset();
   };
 
   const toDisplay = scan ? (
@@ -107,6 +124,11 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     <SpoolDetails spoolId={debounced} />
   );
 
+  const onSpoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateMutation.reset();
+    setSpoolId(Number(e.target.value));
+  };
+
   return (
     <>
       <div>
@@ -116,8 +138,11 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           className="border border-gray-300 p-1 rounded"
           placeholder="Spool ID"
           value={spoolId?.toString()}
-          onChange={(e) => setSpoolId(Number(e.target.value))}
+          onChange={onSpoolIdChange}
         />
+        {updateMutation.isError && (
+          <div className="text-red-500">{updateMutation.error?.message}</div>
+        )}
       </div>
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mt-2"
@@ -137,7 +162,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
         </button>
         <button
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-200 disabled:cursor-not-allowed"
-          disabled={spoolData == null}
+          disabled={spoolData == null || updateMutation.isError}
           onClick={updateTray}
         >
           Update
