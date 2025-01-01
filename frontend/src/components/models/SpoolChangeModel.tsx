@@ -11,6 +11,8 @@ import {
   useDevices,
 } from "@yudiel/react-qr-scanner";
 import { create } from "zustand";
+import Button from "../Button";
+import Input from "../Input";
 
 export type FilamentChangeModelProps = {
   trayId: number;
@@ -23,12 +25,20 @@ type SpoolInformationProps = {
 
 type ChangeStore = {
   error: string | null;
+  spoolId: number | null;
+  scanning: boolean;
   setError(error: string | null): void;
+  setSpoolId(spoolId: number | null): void;
+  setScanning(scanning: boolean): void;
 };
 
 const useChangeStore = create<ChangeStore>((set) => ({
   error: null,
+  spoolId: null,
+  scanning: false,
   setError: (error) => set({ error }),
+  setSpoolId: (spoolId) => set({ spoolId }),
+  setScanning: (scanning) => set({ scanning }),
 }));
 
 function mmToMeter(mm: number) {
@@ -77,25 +87,73 @@ function SpoolDetails(props: SpoolDetailsProps) {
   );
 }
 
+function QrCodeScanner() {
+  const { setSpoolId, setError, setScanning } = useChangeStore();
+  const handleScan = (result: IDetectedBarcode[]) => {
+    const rawText = result[0].rawValue;
+    const urlMatch = rawText.match(urlRegex);
+    const spoolmanMatch = rawText.match(spoolmanRegex);
+    if (urlMatch) {
+      setSpoolId(Number(urlMatch[1]));
+    } else if (spoolmanMatch) {
+      setSpoolId(Number(spoolmanMatch[1]));
+    } else {
+      setError("Invalid QR Code");
+      setScanning(false);
+      return;
+    }
+    setScanning(false);
+    setError(null);
+  };
+  return (
+    <div className="p-3">
+      <Scanner
+        onScan={handleScan}
+        formats={["qr_code"]}
+        components={{
+          audio: false,
+          torch: false,
+        }}
+      />
+    </div>
+  );
+}
+
+function QrCodeButton() {
+  const { setScanning, scanning } = useChangeStore();
+  const cameras = useDevices();
+  if (cameras.length == 0) {
+    return null;
+  }
+  return (
+    <Button
+      variant="primary"
+      onClick={() => setScanning(!scanning)}
+      className="mt-2"
+    >
+      {scanning ? "Stop Scanning" : "Scan QR Code"}
+    </Button>
+  );
+}
+
 const urlRegex = /https?:\/\/.*\/(\d+)/;
 const spoolmanRegex = /web\+spoolman:s-(\d+)/;
 
 export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const { close } = usePopup();
-  const { error, setError } = useChangeStore();
+  const { error, setError, scanning } = useChangeStore();
   const [spoolId, setSpoolId] = useState<number | null>(props.initialSpoolId);
   const debounced = useDebounce(spoolId, 500);
   const { data: spoolData } = useSpoolQuery(debounced);
   const queryClient = useQueryClient();
-  const updateMutation = useMutation<
-    void,
-    Error,
-    {
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      trayId,
+      spoolId,
+    }: {
       trayId: number;
       spoolId: number | null;
-    }
-  >({
-    mutationFn: async ({ trayId, spoolId }) => {
+    }) => {
       const result = await fetch(`/api/tray/${trayId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,9 +169,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
       close();
     },
   });
-  const cameras = useDevices();
-  const [scan, setScan] = useState(false);
-
+  // Sync mutation errors to the store
   useEffect(() => {
     if (updateMutation.error) {
       setError(updateMutation.error.message);
@@ -123,39 +179,6 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const updateTray = () => {
     updateMutation.mutate({ trayId: props.trayId, spoolId: debounced });
   };
-
-  const handleScan = (result: IDetectedBarcode[]) => {
-    const rawText = result[0].rawValue;
-    const urlMatch = rawText.match(urlRegex);
-    const spoolmanMatch = rawText.match(spoolmanRegex);
-    if (urlMatch) {
-      setSpoolId(Number(urlMatch[1]));
-    } else if (spoolmanMatch) {
-      setSpoolId(Number(spoolmanMatch[1]));
-    } else {
-      setError("Invalid QR Code");
-      setScan(false);
-      return;
-    }
-    setScan(false);
-    setError(null);
-    updateMutation.reset();
-  };
-
-  const toDisplay = scan ? (
-    <div className="p-3">
-      <Scanner
-        onScan={handleScan}
-        formats={["qr_code"]}
-        components={{
-          audio: false,
-          torch: false,
-        }}
-      />
-    </div>
-  ) : (
-    <SpoolDetails spoolId={debounced} />
-  );
 
   const onSpoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateMutation.reset();
@@ -167,7 +190,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     <>
       <div>
         <label className="font-bold mr-1">Spool ID:</label>
-        <input
+        <Input
           type="number"
           className="border border-gray-300 p-1 rounded"
           placeholder="Spool ID"
@@ -176,31 +199,22 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
         />
         {error && <div className="text-red-500">{error}</div>}
       </div>
-      {cameras.length != 0 && (
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mt-2 disabled:bg-blue-200 disabled:cursor-not-allowed"
-          onClick={() => setScan(!scan)}
-        >
-          Scan QR Code
-        </button>
-      )}
 
-      {toDisplay}
+      <QrCodeButton />
+
+      {scanning ? <QrCodeScanner /> : <SpoolDetails spoolId={debounced} />}
 
       <div className="flex flex-row items-center gap-1">
-        <button
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-          onClick={close}
-        >
+        <Button variant="danger" onClick={close}>
           Cancel
-        </button>
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:bg-blue-200 disabled:cursor-not-allowed"
-          disabled={spoolData == null || updateMutation.isError}
+        </Button>
+        <Button
+          variant="primary"
           onClick={updateTray}
+          disabled={spoolData == null || updateMutation.isError}
         >
           Update
-        </button>
+        </Button>
       </div>
     </>
   );
