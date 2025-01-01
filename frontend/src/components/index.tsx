@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Configuration from "./Configuration";
 
 export default function Index() {
@@ -5,7 +6,9 @@ export default function Index() {
     <>
       <div className="container mx-auto p-4">
         <h1 className="text-3xl text-center">Bambu Spoolman Integration</h1>
-        <Configuration />
+        <Suspense fallback={<div>Loading...</div>}>
+          <Configuration />
+        </Suspense>
       </div>
     </>
   );

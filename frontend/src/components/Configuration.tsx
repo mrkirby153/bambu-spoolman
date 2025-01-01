@@ -6,8 +6,8 @@ function amsCount(trayCount: number) {
 }
 
 export default function Configuration() {
-  const settings = useSettings();
-  const trayCount = settings.data?.tray_count || 0;
+  const { data } = useSettings();
+  const trayCount = data.tray_count || 0;
   const ams = amsCount(trayCount);
 
   const amsComponents = [];

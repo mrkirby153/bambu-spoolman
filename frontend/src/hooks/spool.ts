@@ -1,9 +1,5 @@
 import type { Spool } from "@app/types";
-import {
-  QueryFunctionContext,
-  useQuery,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { QueryFunctionContext, useSuspenseQuery } from "@tanstack/react-query";
 
 async function query({ queryKey }: QueryFunctionContext) {
   const [, spoolId] = queryKey;
@@ -18,14 +14,6 @@ async function query({ queryKey }: QueryFunctionContext) {
 }
 
 export function useSpoolQuery(spoolId: number | null) {
-  return useQuery<Spool | null>({
-    queryKey: ["spool", spoolId],
-    queryFn: query,
-    retry: false,
-  });
-}
-
-export function useSpoolQuerySuspense(spoolId: number | null) {
   return useSuspenseQuery<Spool | null>({
     queryKey: ["spool", spoolId],
     queryFn: query,

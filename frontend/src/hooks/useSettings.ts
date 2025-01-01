@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 async function load() {
   const response = await fetch("/api/settings");
@@ -18,7 +18,7 @@ export type Settings = {
 };
 
 export default function useSettings() {
-  return useQuery<Settings>({
+  return useSuspenseQuery<Settings>({
     queryKey: ["settings"],
     queryFn: load,
   });

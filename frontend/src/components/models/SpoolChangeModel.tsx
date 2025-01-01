@@ -1,5 +1,5 @@
 import useDebounce from "@app/hooks/debounce";
-import { useSpoolQuery, useSpoolQuerySuspense } from "@app/hooks/spool";
+import { useSpoolQuery } from "@app/hooks/spool";
 import { usePopup } from "@app/stores/popupStore";
 import { Spool } from "@app/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,7 +52,7 @@ type SpoolDetailsProps = {
 };
 
 function SpoolDetails(props: SpoolDetailsProps) {
-  const { data: spoolData } = useSpoolQuerySuspense(props.spoolId);
+  const { data: spoolData } = useSpoolQuery(props.spoolId);
   return (
     <div className="my-3">
       <Suspense fallback={<div>Loading...</div>}>

@@ -1,10 +1,10 @@
-import type { Spool } from "@app/types";
 import styles from "./AmsConfiguration.module.css";
 import useSettings from "@app/hooks/useSettings";
 import { usePopup } from "@app/stores/popupStore";
 import SpoolChangeModel from "./models/SpoolChangeModel";
 import { useSpoolQuery } from "@app/hooks/spool";
 import AmsSpoolChip from "./AmsSpoolChip";
+import { Suspense } from "react";
 
 export type AmsConfigurationProps = {
   id: number;
@@ -18,8 +18,7 @@ type AmsSlotProps = {
 };
 
 function AmsSlot(props: AmsSlotProps) {
-  const spool = useSpoolQuery(props.spoolId);
-
+  const { data: spool } = useSpoolQuery(props.spoolId);
   const { open } = usePopup();
 
   const openChangeModel = () => {
@@ -30,25 +29,25 @@ function AmsSlot(props: AmsSlotProps) {
       }
     );
   };
-
-  const resolvedSpool: Spool | null = spool.data != null ? spool.data : null;
   return (
-    <div onClick={openChangeModel} className="cursor-pointer">
-      <AmsSpoolChip
-        spool={resolvedSpool}
-        borderStyle={props.active ? styles.active : styles.inactive}
-        showUsage
-        showMaterial
-      />
-    </div>
+    <Suspense fallback={<AmsSpoolChip spool={null} />}>
+      <div onClick={openChangeModel} className="cursor-pointer">
+        <AmsSpoolChip
+          spool={spool}
+          borderStyle={props.active ? styles.active : styles.inactive}
+          showUsage
+          showMaterial
+        />
+      </div>
+    </Suspense>
   );
 }
 
 export default function AmsConfiguration(props: AmsConfigurationProps) {
-  const settings = useSettings();
+  const { data } = useSettings();
   const start = props.id * 4;
   const end = start + 4;
-  const trays = settings.data?.trays || {};
+  const trays = data.trays || {};
 
   const slots = [];
   for (let i = start; i < end; i++) {
@@ -59,7 +58,7 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
         amsId={props.id}
         slotId={i}
         spoolId={spool}
-        active={i == settings.data?.active_tray}
+        active={i == data.active_tray}
       />
     );
   }
