@@ -12,9 +12,11 @@ requests = "^2.32.3"
 flask = "^3.1.0"
 gunicorn = "^23.0.0"
 python-dotenv = "^1.0.1"
+asyncio = "^3.4.3"
 
 [tool.poetry.scripts]
 bambu-spoolman = "bambu_spoolman:main"
+bambu-spoolman-broker = "bambu_spoolman.daemon:main"
 
 [build-system]
 requires = ["poetry-core"]

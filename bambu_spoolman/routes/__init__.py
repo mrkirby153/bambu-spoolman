@@ -62,3 +62,11 @@ def update_tray(tray_id):
     save_settings(settings)
 
     return {"status": "ok"}
+
+
+@blueprint.route("/socket_test")
+def socket_test():
+    from bambu_spoolman.broker.commands import testing
+
+    result = testing(3, 5).execute()
+    return {"result": result}
