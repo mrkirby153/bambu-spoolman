@@ -7,6 +7,7 @@ from bambu_spoolman.broker.commands import execute_command
 import pickle
 
 SOCKET_PATH = "/tmp/bambu_spoolman.sock"
+SERVER_BUFFER_SIZE = 2048
 
 
 def init_socket():
@@ -23,7 +24,7 @@ def init_socket():
 
 async def handle_client(client):
     loop = asyncio.get_event_loop()
-    request = await loop.sock_recv(client, 255)
+    request = await loop.sock_recv(client, SERVER_BUFFER_SIZE)
     (command_name, args, kwargs) = pickle.loads(request)
     logger.debug(
         "Received command {} with args {} and kwargs {}", command_name, args, kwargs
@@ -33,10 +34,25 @@ async def handle_client(client):
         result = await execute_command(command_name, args, kwargs)
         response = pickle.dumps(result)
     except Exception as e:
-        logger.error("Error executing command: {}", e)
+        logger.exception("Error executing command: {}", e, exc_info=True)
         response = pickle.dumps(e)
 
-    await loop.sock_sendall(client, response)
+    if len(response) > SERVER_BUFFER_SIZE:
+        logger.error(
+            "Response is too large to be sent over the socket. Max size is {} bytes. Got {} bytes",
+            SERVER_BUFFER_SIZE,
+            len(response),
+        )
+        await loop.sock_sendall(
+            client,
+            pickle.dumps(
+                ValueError(
+                    f"Response too large. Got {len(response)} bytes max is {SERVER_BUFFER_SIZE}"
+                )
+            ),
+        )
+    else:
+        await loop.sock_sendall(client, response)
 
     client.close()
     logger.debug("Client closed")
@@ -50,7 +66,6 @@ async def run_server():
     loop = asyncio.get_event_loop()
     while True:
         client, addr = await loop.sock_accept(server)
-        logger.debug("Accepted connection from:", addr)
         loop.create_task(handle_client(client))
 
 

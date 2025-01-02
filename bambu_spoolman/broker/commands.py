@@ -2,19 +2,24 @@ from loguru import logger
 from functools import wraps
 import pickle
 import asyncio
+from typing import Callable, TypeVar, ParamSpec, Coroutine, Any, overload
 
 _REGISTERED_COMMANDS = {}
 
+T = TypeVar("T")
+P = ParamSpec("P")
+R = TypeVar("R")
 
-class CommandExecution:
+
+class CommandExecution[R]:
 
     def __init__(self, name, args, kwargs):
         self.command_name = name
         self.args = args
         self.kwargs = kwargs
 
-    def execute(self):
-        from bambu_spoolman.broker.server import get_socket
+    def execute(self) -> R:
+        from bambu_spoolman.broker.server import get_socket, SERVER_BUFFER_SIZE
 
         logger.debug(
             "Executing command with args: {} and kwargs: {}", self.args, self.kwargs
@@ -22,10 +27,18 @@ class CommandExecution:
         socket = get_socket()
         # Pickle args and kwargs
         data = pickle.dumps((self.command_name, self.args, self.kwargs))
+
+        if len(data) > SERVER_BUFFER_SIZE:
+            raise ValueError(
+                f"Arguments are too large to be sent over the socket. Max size is {SERVER_BUFFER_SIZE} bytes. Got {len(data)} bytes"
+            )
         socket.sendall(data)
 
-        response_bytes = socket.recv(2048)
+        response_bytes = socket.recv(SERVER_BUFFER_SIZE)
         response = pickle.loads(response_bytes)
+
+        if response is not None and isinstance(response, Exception):
+            raise response
         return response
 
 
@@ -40,18 +53,24 @@ async def execute_command(command_name, args, kwargs):
         return command(*args, **kwargs)
 
 
-def command(func):
+@overload
+def command(
+    func: Callable[P, Coroutine[Any, Any, R]]
+) -> Callable[P, CommandExecution[R]]: ...
+
+
+def command(func: Callable[P, R]) -> Callable[P, CommandExecution[R]]:
     name = func.__name__
     logger.debug("Registering server command: {}", name)
     _REGISTERED_COMMANDS[name] = func
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> CommandExecution[R]:
         return CommandExecution(name, args, kwargs)
 
     return wrapper
 
 
 @command
-async def testing(first, second):
-    return first + second
+async def testing(first: int, second: int):
+    return first / second
