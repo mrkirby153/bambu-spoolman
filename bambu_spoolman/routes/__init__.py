@@ -1,5 +1,6 @@
 from flask import Blueprint, g, request
 from bambu_spoolman.settings import save_settings, load_settings
+from bambu_spoolman.broker.commands import get_printer_status
 
 blueprint = Blueprint("bambu_spoolman", __name__, url_prefix="/api")
 
@@ -64,9 +65,7 @@ def update_tray(tray_id):
     return {"status": "ok"}
 
 
-@blueprint.route("/socket_test")
-def socket_test():
-    from bambu_spoolman.broker.commands import testing
-
-    result = testing(3, 5).execute()
-    return {"result": result}
+@blueprint.route("/printer-info")
+def printer_info():
+    (status, last_update, connected) = get_printer_status().execute()
+    return {"status": status, "last_update": last_update, "connected": connected}

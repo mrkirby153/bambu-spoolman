@@ -3,11 +3,11 @@ import socket
 import os
 import asyncio
 from flask import g
-from bambu_spoolman.broker.commands import execute_command
+from bambu_spoolman.broker.command import execute_command
 import pickle
 
 SOCKET_PATH = "/tmp/bambu_spoolman.sock"
-SERVER_BUFFER_SIZE = 2048
+SERVER_BUFFER_SIZE = 8192
 
 
 def init_socket():
@@ -32,6 +32,7 @@ async def handle_client(client):
 
     try:
         result = await execute_command(command_name, args, kwargs)
+        logger.debug("Command executed successfully with result {}", result)
         response = pickle.dumps(result)
     except Exception as e:
         logger.exception("Error executing command: {}", e, exc_info=True)
@@ -59,6 +60,9 @@ async def handle_client(client):
 
 
 async def run_server():
+    # Load commands
+    import bambu_spoolman.broker.commands  # noqa
+
     logger.info("Starting socket server")
     server = init_socket()
     server.setblocking(False)
