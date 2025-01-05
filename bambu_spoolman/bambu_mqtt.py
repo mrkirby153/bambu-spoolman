@@ -5,6 +5,7 @@ from typing import Callable
 import json
 import threading
 import time
+from bambu_spoolman.settings import load_settings, save_settings
 
 
 def recursive_merge(dict1, dict2):
@@ -22,6 +23,7 @@ class StatefulPrinterInfo:
         self.mqtt_handler = None
         self.last_update = 0
         self.connected = False
+        self.tray_count = 0
 
     def handle_message(self, mqtt_handler, message):
         if "print" not in message:
@@ -34,6 +36,18 @@ class StatefulPrinterInfo:
         # Merge the new info with the old info
         recursive_merge(self._info, message)
         self.last_update = int(time.time())
+        self.update_tray_count(
+            len(self._info.get("print", {}).get("ams", {}).get("ams", [])) * 4
+        )
+
+    def update_tray_count(self, count):
+        if self.tray_count != count:
+            settings = load_settings()
+            settings["tray_count"] = count
+            save_settings(settings)
+            logger.debug("Updated tray count to {}", count)
+
+        self.tray_count = count
 
     def on_connect(self, mqtt_handler):
         logger.info("Connected to printer")
