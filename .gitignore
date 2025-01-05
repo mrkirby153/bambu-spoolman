@@ -2,3 +2,4 @@ __pycache__/
 dev/data/
 .env
 /settings.json
+messages.log

@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 import shutil
 
 
-def extract_gcode(path):
+def extract_gcode(path, gcode_path=None):
     logger.debug(f"Extracting GCODE from {path}")
     with tempfile.TemporaryDirectory() as temp_folder:
         logger.debug("Extracting {} to {}", path, temp_folder)
@@ -14,23 +14,25 @@ def extract_gcode(path):
             zip_ref.extractall(temp_folder)
 
         # Find the GCODE file
-        gcode_path = None
-
-        model_settings_path = os.path.join(
-            temp_folder, "Metadata", "model_settings.config"
-        )
-        logger.debug(f"Looking for GCODE in {model_settings_path}")
-
-        root = ET.parse(model_settings_path).getroot()
-        plate = root[0]
-        for item in plate:
-            if item.attrib["key"] == "gcode_file":
-                gcode_path = os.path.join(temp_folder, item.attrib["value"])
-                break
 
         if gcode_path is None:
-            logger.error("Could not find GCODE file")
-            return
+            model_settings_path = os.path.join(
+                temp_folder, "Metadata", "model_settings.config"
+            )
+            logger.debug(f"Looking for GCODE in {model_settings_path}")
+
+            root = ET.parse(model_settings_path).getroot()
+            plate = root[0]
+            for item in plate:
+                if item.attrib["key"] == "gcode_file":
+                    gcode_path = os.path.join(temp_folder, item.attrib["value"])
+                    break
+
+            if gcode_path is None:
+                logger.error("Could not find GCODE file")
+                return
+        else:
+            gcode_path = os.path.join(temp_folder, gcode_path)
 
         logger.debug(f"Found GCODE file at {gcode_path}")
         with open(gcode_path, "r") as f:

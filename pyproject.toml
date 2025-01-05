@@ -18,6 +18,7 @@ paho-mqtt = "^2.1.0"
 [tool.poetry.scripts]
 bambu-spoolman = "bambu_spoolman:main"
 bambu-spoolman-broker = "bambu_spoolman.daemon:main"
+mqtt-replay = "bambu_spoolman.debug.replay:main"
 
 [build-system]
 requires = ["poetry-core"]
