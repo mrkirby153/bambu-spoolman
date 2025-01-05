@@ -14,3 +14,10 @@ def get_printer_status():
         stateful_printer_info.last_update,
         stateful_printer_info.connected,
     )
+
+
+@command
+def get_tray_count():
+    info = stateful_printer_info.get_info()
+    ams = info.get("print", {}).get("ams", {})
+    return len(ams.get("ams", [])) * 4  # 4 trays per AMS

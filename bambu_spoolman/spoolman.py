@@ -10,40 +10,46 @@ class SpoolmanClient:
 
     def __init__(self, endpoint):
         self.endpoint = endpoint
+        self.verify = os.environ.get("SPOOLMAN_VERIFY", "true").lower() == "true"
+
+        if not self.verify:
+            logger.warning("SSL verification for Spoolman API is disabled.")
 
     def validate(self):
         """
         Validates the connection to the Spoolman API
         """
-        response = requests.get(self._make_api_route("health"))
+        response = requests.get(self._make_api_route("health"), verify=self.verify)
         return response.status_code == 200
 
     def get_info(self):
         """
         Get information about the Spoolman instance
         """
-        response = requests.get(self._make_api_route("info"))
+        response = requests.get(self._make_api_route("info"), verify=self.verify)
         return response.json()
 
     def get_filaments(self):
         """
         Get a list of all filaments
         """
-        response = requests.get(self._make_api_route("filament"))
+        response = requests.get(self._make_api_route("filament"), verify=self.verify)
         return response.json()
 
     def get_spools(self):
         """
         Get a list of all spools
         """
-        response = requests.get(self._make_api_route("spool"))
+        response = requests.get(self._make_api_route("spool"), verify=self.verify)
         return response.json()
 
     def get_spool(self, spool_id):
         """
         Get a specific spool by ID
         """
-        response = requests.get(self._make_api_route(f"spool/{spool_id}"))
+        response = requests.get(
+            self._make_api_route(f"spool/{spool_id}"), verify=self.verify
+        )
         if response.status_code != 200:
             return None
         return response.json()
@@ -61,6 +67,7 @@ class SpoolmanClient:
                 "use_length": length,
                 "use_weight": weight,
             },
+            verify=self.verify,
         )
         return response.json()
 

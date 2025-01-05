@@ -1,6 +1,6 @@
 from flask import Blueprint, g, request
 from bambu_spoolman.settings import save_settings, load_settings
-from bambu_spoolman.broker.commands import get_printer_status, testing
+from bambu_spoolman.broker.commands import get_printer_status, testing, get_tray_count
 
 blueprint = Blueprint("bambu_spoolman", __name__, url_prefix="/api")
 
@@ -32,10 +32,10 @@ def get_settings():
     return load_settings()
 
 
-@blueprint.route("/settings", methods=["POST"])
-def save_settings_route():
-    save_settings(request.json)
-    return {"status": "ok"}
+@blueprint.route("/printer-info/trays")
+def get_ams_trays():
+    trays = get_tray_count().execute()
+    return {"trays": trays}
 
 
 @blueprint.route("/tray/<tray_id>", methods=["POST"])

@@ -1,6 +1,7 @@
 import asyncio
 from bambu_spoolman.broker.server import run_server
 from bambu_spoolman.bambu_mqtt import MqttHandler, stateful_printer_info
+from bambu_spoolman.broker.filament_usage_tracker import FilamentUsageTracker
 from dotenv import load_dotenv
 import os
 
@@ -21,10 +22,13 @@ async def async_main():
     mqtt.add_on_connect_callback(stateful_printer_info.on_connect)
     mqtt.add_on_disconnect_callback(stateful_printer_info.on_disconnect)
 
+    usage_tracker = FilamentUsageTracker()
+    mqtt.add_callback(usage_tracker.on_message)
+
     mqtt.start()
 
     await asyncio.gather(*tasks)
-    # mqtt.join()
+    mqtt.join()
 
 
 def main():
