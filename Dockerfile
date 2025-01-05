@@ -32,6 +32,8 @@ FROM base AS app
 
 RUN apk add --no-cache nginx supervisor
 
+ENV LOGURU_LEVEL=INFO
+
 COPY --from=builder /venv /venv
 COPY --from=frontend_builder /app/dist /app/dist
 COPY conf/nginx.conf /etc/nginx/http.d/default.conf
