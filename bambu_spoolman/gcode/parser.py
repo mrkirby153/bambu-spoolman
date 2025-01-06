@@ -1,5 +1,6 @@
-from loguru import logger
 import re
+
+from loguru import logger
 
 
 class GCodeOperation:

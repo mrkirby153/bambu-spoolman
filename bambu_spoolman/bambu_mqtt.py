@@ -1,10 +1,12 @@
-from loguru import logger
-import paho.mqtt.client as mqtt
-import ssl
-from typing import Callable
 import json
+import ssl
 import threading
 import time
+from typing import Callable
+
+import paho.mqtt.client as mqtt
+from loguru import logger
+
 from bambu_spoolman.settings import load_settings, save_settings
 
 

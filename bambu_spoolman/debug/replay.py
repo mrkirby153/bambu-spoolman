@@ -1,11 +1,12 @@
-import paho.mqtt.client as mqtt
-from dotenv import load_dotenv
+import datetime
+import json
 import os
 import ssl
-import datetime
 import time
+
+import paho.mqtt.client as mqtt
+from dotenv import load_dotenv
 from loguru import logger
-import json
 
 REPLAY_FILE = "messages.log"
 

@@ -1,10 +1,12 @@
-from loguru import logger
-import socket
-import os
 import asyncio
-from flask import g
-from bambu_spoolman.broker.command import execute_command
+import os
 import pickle
+import socket
+
+from flask import g
+from loguru import logger
+
+from bambu_spoolman.broker.command import execute_command
 
 SOCKET_PATH = "/tmp/bambu_spoolman.sock"
 SERVER_BUFFER_SIZE = 8192

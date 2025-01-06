@@ -1,9 +1,10 @@
-import zipfile
-import tempfile
-from loguru import logger
 import os
-import xml.etree.ElementTree as ET
 import shutil
+import tempfile
+import xml.etree.ElementTree as ET
+import zipfile
+
+from loguru import logger
 
 
 def extract_gcode(path, gcode_path=None):

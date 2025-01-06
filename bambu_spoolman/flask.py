@@ -1,8 +1,9 @@
+from dotenv import load_dotenv
 from flask import Flask, g
+from loguru import logger
+
 from bambu_spoolman.routes import blueprint
 from bambu_spoolman.spoolman import new_client
-from dotenv import load_dotenv
-from loguru import logger
 
 load_dotenv()
 

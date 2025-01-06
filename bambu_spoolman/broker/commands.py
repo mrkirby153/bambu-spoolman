@@ -1,5 +1,5 @@
-from bambu_spoolman.broker.command import command
 from bambu_spoolman.bambu_mqtt import stateful_printer_info
+from bambu_spoolman.broker.command import command
 from bambu_spoolman.settings import load_settings
 
 

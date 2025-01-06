@@ -20,6 +20,13 @@ bambu-spoolman = "bambu_spoolman:main"
 bambu-spoolman-broker = "bambu_spoolman.daemon:main"
 mqtt-replay = "bambu_spoolman.debug.replay:main"
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.6"
+
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

@@ -1,8 +1,9 @@
-from loguru import logger
-from functools import wraps
-import pickle
 import asyncio
-from typing import Callable, TypeVar, ParamSpec, Coroutine, Any, overload
+import pickle
+from functools import wraps
+from typing import Any, Callable, Coroutine, ParamSpec, TypeVar, overload
+
+from loguru import logger
 
 _REGISTERED_COMMANDS = {}
 
@@ -19,7 +20,7 @@ class CommandExecution[R]:
         self.kwargs = kwargs
 
     def execute(self) -> R:
-        from bambu_spoolman.broker.server import get_socket, SERVER_BUFFER_SIZE
+        from bambu_spoolman.broker.server import SERVER_BUFFER_SIZE, get_socket
 
         logger.debug(
             "Executing command with args: {} and kwargs: {}", self.args, self.kwargs

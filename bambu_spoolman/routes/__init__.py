@@ -1,6 +1,7 @@
 from flask import Blueprint, g, request
-from bambu_spoolman.settings import save_settings, load_settings
-from bambu_spoolman.broker.commands import get_printer_status, testing, get_tray_count
+
+from bambu_spoolman.broker.commands import get_printer_status, get_tray_count, testing
+from bambu_spoolman.settings import load_settings, save_settings
 
 blueprint = Blueprint("bambu_spoolman", __name__, url_prefix="/api")
 

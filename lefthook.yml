@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    ruff-imports:
+      glob: "*.py"
+      run: ruff check --select I --fix {staged_files}
+      stage_fixed: true

@@ -1,10 +1,12 @@
+import tempfile
+
+import requests
 from loguru import logger
-from bambu_spoolman.spoolman import new_client
+
 from bambu_spoolman.gcode.bambu import extract_gcode
 from bambu_spoolman.gcode.parser import evaluate_gcode
 from bambu_spoolman.settings import load_settings
-import tempfile
-import requests
+from bambu_spoolman.spoolman import new_client
 
 
 class FilamentUsageTracker:
