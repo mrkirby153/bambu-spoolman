@@ -4,3 +4,8 @@ pre-commit:
       glob: "*.py"
       run: ruff check --select I --fix {staged_files}
       stage_fixed: true
+    biome-format:
+      root: "frontend/"
+      glob: "*.ts*"
+      run: pnpm biome format --write {staged_files}
+      stage_fixed: true

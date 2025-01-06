@@ -26,7 +26,7 @@ function AmsSlot(props: AmsSlotProps) {
       <SpoolChangeModel trayId={props.slotId} initialSpoolId={props.spoolId} />,
       {
         title: "Update Spool",
-      }
+      },
     );
   };
   return (
@@ -59,7 +59,7 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
         slotId={i}
         spoolId={spool}
         active={i == data.active_tray}
-      />
+      />,
     );
   }
 

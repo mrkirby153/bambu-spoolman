@@ -12,7 +12,7 @@ export default function Input({
       className={classNames(
         "border border-gray-300 rounded p-1",
         className,
-        styles.textField
+        styles.textField,
       )}
     />
   );
