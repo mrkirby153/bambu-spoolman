@@ -1,8 +1,10 @@
+import os
 import tempfile
 
 import requests
 from loguru import logger
 
+from bambu_spoolman.bambu_ftp import retrieve_cached_3mf
 from bambu_spoolman.gcode.bambu import extract_gcode
 from bambu_spoolman.gcode.parser import evaluate_gcode
 from bambu_spoolman.settings import load_settings
@@ -11,11 +13,12 @@ from bambu_spoolman.spoolman import new_client
 
 class FilamentUsageTracker:
 
-    def __init__(self):
+    def __init__(self, handle_in_progress=False):
         self.spoolman_client = new_client()
         self.active_model = None
         self.ams_mapping = None
         self.spent_layers = set()
+        self._handle_in_progress_print = handle_in_progress
 
     def on_message(self, mqtt_handler, message):
         print_obj = message.get("print", {})
@@ -31,6 +34,12 @@ class FilamentUsageTracker:
             if "gcode_state" in print_obj and self.active_model is not None:
                 if print_obj["gcode_state"] == "FINISH":
                     self._handle_print_end()
+
+            if "gcode_state" in print_obj and self.active_model is None:
+                if print_obj["gcode_state"] == "RUNNING":
+                    self._handle_in_progress_print(
+                        print_obj["gcode_file"], print_obj["layer_num"]
+                    )
 
     def _handle_print_start(self, print_obj):
         logger.info("Print started!")
@@ -117,3 +126,37 @@ class FilamentUsageTracker:
 
             logger.debug("Gcode extracted from model")
             self.active_model = evaluate_gcode(gcode)
+
+    def _handle_in_progress_print(self, gcode_filename, current_layer):
+        if not self._handle_in_progress_print:
+            return
+        if self.active_model is not None:
+            logger.error(
+                "Calling _handle_in_progress_print with an already active print"
+            )
+            return
+        logger.info(
+            "Print is already in progress. Attempting to recover from layer {}",
+            current_layer,
+        )
+
+        cached = retrieve_cached_3mf(gcode_filename)
+
+        if cached is None:
+            logger.warning(
+                "No cached 3mf file found. Filament usage will not be tracked"
+            )
+            return
+
+        gcode = extract_gcode(cached)
+        if gcode is None:
+            logger.error("Failed to extract gcode from cached 3mf")
+            return
+        logger.debug("Gcode extracted from cached 3mf")
+        self.active_model = evaluate_gcode(gcode)
+
+        os.remove(cached)
+
+        # Spend up to the current layer
+        for i in range(current_layer + 1):
+            self._handle_layer_change(i)

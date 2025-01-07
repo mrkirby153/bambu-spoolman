@@ -23,7 +23,7 @@ def parse_log_line(line):
 def main():
     load_dotenv()
     client = mqtt.Client()
-    client.username_pw_set("bblp", os.environ.get("PRINTER_ACCESS_CODE"))
+    client.username_pw_set("bblp", "password")
 
     ssl_ctx = ssl.create_default_context()
     ssl_ctx.check_hostname = False
@@ -31,7 +31,8 @@ def main():
     client.tls_set_context(ssl_ctx)
     client.tls_insecure_set(True)
 
-    client.connect(os.environ.get("PRINTER_IP"), 8883, keepalive=5)
+    resp = client.connect("127.0.0.1", 1883, keepalive=5)
+    logger.info(f"Connected with result code {resp}")
 
     client.loop_start()
 
