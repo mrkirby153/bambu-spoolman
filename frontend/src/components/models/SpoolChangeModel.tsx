@@ -3,43 +3,24 @@ import { useSpoolQuery } from "@app/hooks/spool";
 import { usePopup } from "@app/stores/popupStore";
 import { Spool } from "@app/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import AmsSpoolChip from "../AmsSpoolChip";
 import {
   IDetectedBarcode,
   Scanner,
   useDevices,
 } from "@yudiel/react-qr-scanner";
-import { create } from "zustand";
 import Button from "../Button";
 import Input from "../Input";
+import useChangeStore from "@app/stores/spoolChangeStore";
 
 export type FilamentChangeModelProps = {
   trayId: number;
-  initialSpoolId: number;
 };
 
 type SpoolInformationProps = {
   spool: Spool;
 };
-
-type ChangeStore = {
-  error: string | null;
-  spoolId: number | null;
-  scanning: boolean;
-  setError(error: string | null): void;
-  setSpoolId(spoolId: number | null): void;
-  setScanning(scanning: boolean): void;
-};
-
-const useChangeStore = create<ChangeStore>((set) => ({
-  error: null,
-  spoolId: null,
-  scanning: false,
-  setError: (error) => set({ error }),
-  setSpoolId: (spoolId) => set({ spoolId }),
-  setScanning: (scanning) => set({ scanning }),
-}));
 
 function mmToMeter(mm: number) {
   return mm / 1000;
@@ -141,8 +122,7 @@ const spoolmanRegex = /web\+spoolman:s-(\d+)/;
 
 export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const { close } = usePopup();
-  const { error, setError, scanning } = useChangeStore();
-  const [spoolId, setSpoolId] = useState<number | null>(props.initialSpoolId);
+  const { error, setError, scanning, spoolId, setSpoolId } = useChangeStore();
   const debounced = useDebounce(spoolId, 500);
   const { data: spoolData } = useSpoolQuery(debounced);
   const queryClient = useQueryClient();
@@ -187,7 +167,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   };
 
   return (
-    <>
+    <Suspense fallback={<div>Loading...</div>}>
       <div>
         <label className="font-bold mr-1">Spool ID:</label>
         <Input
@@ -216,6 +196,6 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           Update
         </Button>
       </div>
-    </>
+    </Suspense>
   );
 }

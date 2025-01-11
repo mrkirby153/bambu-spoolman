@@ -5,6 +5,7 @@ import SpoolChangeModel from "./models/SpoolChangeModel";
 import { useSpoolQuery } from "@app/hooks/spool";
 import AmsSpoolChip from "./AmsSpoolChip";
 import { Suspense } from "react";
+import useChangeStore from "@app/stores/spoolChangeStore";
 
 export type AmsConfigurationProps = {
   id: number;
@@ -20,14 +21,13 @@ type AmsSlotProps = {
 function AmsSlot(props: AmsSlotProps) {
   const { data: spool } = useSpoolQuery(props.spoolId);
   const { open } = usePopup();
+  const { setSpoolId } = useChangeStore();
 
   const openChangeModel = () => {
-    open(
-      <SpoolChangeModel trayId={props.slotId} initialSpoolId={props.spoolId} />,
-      {
-        title: "Update Spool",
-      },
-    );
+    setSpoolId(props.spoolId);
+    open(<SpoolChangeModel trayId={props.slotId} />, {
+      title: "Update Spool",
+    });
   };
   return (
     <Suspense fallback={<AmsSpoolChip spool={null} />}>
