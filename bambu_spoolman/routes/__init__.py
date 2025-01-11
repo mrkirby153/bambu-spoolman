@@ -51,7 +51,7 @@ def update_tray(tray_id):
         return {"status": "error", "message": "Spool not found"}, 404
 
     settings = load_settings()
-    trays = settings["trays"] or {}
+    trays = settings.get("trays", {})
     if spool_id in trays.values():
         if trays[tray_id] != spool_id:
             return {
