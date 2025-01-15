@@ -7,7 +7,7 @@ from loguru import logger
 from bambu_spoolman.bambu_ftp import retrieve_cached_3mf
 from bambu_spoolman.gcode.bambu import extract_gcode
 from bambu_spoolman.gcode.parser import evaluate_gcode
-from bambu_spoolman.settings import load_settings
+from bambu_spoolman.settings import EXTERNAL_SPOOL_ID, load_settings
 from bambu_spoolman.spoolman import new_client
 
 
@@ -19,6 +19,7 @@ class FilamentUsageTracker:
         self.ams_mapping = None
         self.spent_layers = set()
         self._handle_in_progress_print = handle_in_progress
+        self.using_ams = False
 
     def on_message(self, mqtt_handler, message):
         print_obj = message.get("print", {})
@@ -48,7 +49,14 @@ class FilamentUsageTracker:
         self.spent_layers = set()
 
         if model_url.startswith("http"):
-            self.ams_mapping = print_obj.get("ams_mapping", [])
+            if print_obj.get("use_ams", False):
+                logger.info("Using AMS")
+                self.ams_mapping = print_obj.get("ams_mapping", [])
+                self.using_ams = True
+            else:
+                logger.info("Not using AMS")
+                self.using_ams = False
+
             self._load_model(model_url, print_obj.get("param"))
 
             # Spend layer 0 filament
@@ -69,6 +77,7 @@ class FilamentUsageTracker:
         logger.info("Print ended!")
         self.active_model = None
         self.ams_mapping = None
+        self.using_ams = False
 
     def _spend_filament_for_layer(self, layer):
         if self.active_model is None:
@@ -87,7 +96,10 @@ class FilamentUsageTracker:
         for filament, usage in layer_usage.items():
             logger.debug("Spending {}mm of filament {}", usage, filament)
 
-            real_mapping = self.ams_mapping[filament]
+            # Use the external spool ID if we're not using an AMS
+            real_mapping = (
+                self.ams_mapping[filament] if self.using_ams else EXTERNAL_SPOOL_ID
+            )
 
             logger.debug("Real mapping for filament {} is {}", filament, real_mapping)
 

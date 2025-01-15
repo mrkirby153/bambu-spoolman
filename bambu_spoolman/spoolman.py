@@ -51,6 +51,7 @@ class SpoolmanClient:
         response = requests.get(
             self._make_api_route(f"spool/{spool_id}"), verify=self.verify
         )
+        print(f"getting spool {spool_id}")
         if response.status_code != 200:
             return None
         return response.json()

@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import type { ButtonHTMLAttributes } from "react";
 
-export type Variant = "primary" | "danger";
+export type Variant = "primary" | "danger" | "neutral";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -14,6 +14,9 @@ export default function Button({
 }: ButtonProps) {
   let colors = "";
   switch (variant) {
+    case "neutral":
+      colors = "bg-gray-500 hover:bg-gray-700 disabled:bg-gray-200";
+      break;
     case "primary":
       colors = "bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200";
       break;

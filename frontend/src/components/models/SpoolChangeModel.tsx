@@ -55,6 +55,9 @@ type SpoolDetailsProps = {
 
 function SpoolDetails(props: SpoolDetailsProps) {
   const { data: spoolData } = useSpoolQuery(props.spoolId);
+  if (props.spoolId == null) {
+    return <div className="my-3"></div>;
+  }
   return (
     <div className="my-3">
       <Suspense fallback={<div>Loading...</div>}>
@@ -146,7 +149,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
-      close();
+      doClose();
     },
   });
   // Sync mutation errors to the store
@@ -156,6 +159,11 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     }
   }, [updateMutation.error, setError]);
 
+  const doClose = () => {
+    close();
+    setError(null);
+  };
+
   const updateTray = () => {
     updateMutation.mutate({ trayId: props.trayId, spoolId: debounced });
   };
@@ -164,6 +172,10 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     updateMutation.reset();
     setError(null);
     setSpoolId(Number(e.target.value));
+  };
+
+  const removeSpool = () => {
+    updateMutation.mutate({ trayId: props.trayId, spoolId: null });
   };
 
   return (
@@ -185,8 +197,15 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
       {scanning ? <QrCodeScanner /> : <SpoolDetails spoolId={debounced} />}
 
       <div className="flex flex-row items-center gap-1">
-        <Button variant="danger" onClick={close}>
+        <Button variant="danger" onClick={doClose}>
           Cancel
+        </Button>
+        <Button
+          variant="neutral"
+          onClick={removeSpool}
+          disabled={spoolId == null}
+        >
+          Remove Spool
         </Button>
         <Button
           variant="primary"

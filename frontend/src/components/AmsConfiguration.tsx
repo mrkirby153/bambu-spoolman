@@ -13,12 +13,11 @@ export type AmsConfigurationProps = {
 
 type AmsSlotProps = {
   spoolId: number;
-  amsId: number;
   slotId: number;
   active: boolean;
 };
 
-function AmsSlot(props: AmsSlotProps) {
+export function AmsSlot(props: AmsSlotProps) {
   const { data: spool } = useSpoolQuery(props.spoolId);
   const { open } = usePopup();
   const { setSpoolId } = useChangeStore();
@@ -51,11 +50,10 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
 
   const slots = [];
   for (let i = start; i < end; i++) {
-    const spool = trays[i.toString()] || -1;
+    const spool = trays[i.toString()];
     slots.push(
       <AmsSlot
         key={i}
-        amsId={props.id}
         slotId={i}
         spoolId={spool}
         active={i == data.active_tray}

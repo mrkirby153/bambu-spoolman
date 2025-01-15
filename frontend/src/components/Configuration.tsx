@@ -1,5 +1,6 @@
 import useSettings from "@app/hooks/useSettings";
 import AmsConfiguration from "./AmsConfiguration";
+import ExternalSpoolConfiguration from "./ExternalSpoolConfiguration";
 
 function amsCount(trayCount: number) {
   return Math.ceil(trayCount / 4);
@@ -17,8 +18,14 @@ export default function Configuration() {
 
   return (
     <>
-      <h2 className="text-2xl">AMS Configuration</h2>
-      <div className="flex flex-col gap-3 md:flex-row">{amsComponents}</div>
+      <div>
+        <h2 className="text-2xl">External Spool Configuration</h2>
+        <ExternalSpoolConfiguration />
+      </div>
+      <div className="mt-3">
+        <h2 className="text-2xl">AMS Configuration</h2>
+        <div className="flex flex-col gap-3 md:flex-row">{amsComponents}</div>
+      </div>
     </>
   );
 }

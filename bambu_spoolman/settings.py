@@ -1,6 +1,8 @@
 import json
 import os
 
+EXTERNAL_SPOOL_ID = 255
+
 
 def _settings_file():
     configuration_directory = os.environ.get("BAMBU_SPOOLMAN_CONFIG")

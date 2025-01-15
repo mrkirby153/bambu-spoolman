@@ -45,21 +45,27 @@ def update_tray(tray_id):
     if "spool_id" not in data:
         return {"status": "error", "message": "Missing 'spool_id'"}, 400
 
-    spool_id = int(data["spool_id"])
-    spool = g.spoolman.get_spool(spool_id)
-    if spool is None:
-        return {"status": "error", "message": "Spool not found"}, 404
-
     settings = load_settings()
     trays = settings.get("trays", {})
-    if spool_id in trays.values():
-        if trays[tray_id] != spool_id:
-            return {
-                "status": "error",
-                "message": "Tray already assigned to another spool",
-            }, 400
+    spool_id = data.get("spool_id")
+    if spool_id is None:
+        if tray_id in trays:
+            del trays[tray_id]
+            settings["trays"] = trays
+    else:
+        spool_id = int(spool_id)
+        spool = g.spoolman.get_spool(spool_id)
+        if spool is None:
+            return {"status": "error", "message": "Spool not found"}, 404
 
-    trays[tray_id] = spool_id
+        if spool_id in trays.values():
+            if trays.get(tray_id, None) != spool_id:
+                return {
+                    "status": "error",
+                    "message": "Tray already assigned to another spool",
+                }, 400
+
+        trays[tray_id] = spool_id
     settings["trays"] = trays
     save_settings(settings)
 
