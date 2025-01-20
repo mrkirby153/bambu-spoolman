@@ -148,7 +148,7 @@ class MqttHandler(threading.Thread):
         self._subscribe()
 
         for callback in self.callbacks["on_connect"]:
-            callback(self)
+            self._run_callback("on_connect", callback, self)
 
         logger.debug(f"Pending messages: {self.pending_messages}")
         for message in self.pending_messages:
@@ -161,7 +161,7 @@ class MqttHandler(threading.Thread):
             f"Received message on topic {msg.topic} with payload {msg.payload}"
         )
         for callback in self.callbacks["on_message"]:
-            callback(self, json.loads(msg.payload))
+            self._run_callback("on_message", callback, self, json.loads(msg.payload))
 
     def _on_disconnect(self, client, userdata, rc):
         logger.info(
@@ -169,7 +169,7 @@ class MqttHandler(threading.Thread):
         )
         self.connected = False
         for callback in self.callbacks["on_disconnect"]:
-            callback(self)
+            self._run_callback("on_disconnect", callback, self)
 
     def publish(self, message, wait=False):
         if not self.connected:
@@ -208,3 +208,9 @@ class MqttHandler(threading.Thread):
         else:
             self.backoff += 1
             return min(2**self.backoff, MAX_BACKOFF_DURATION)
+
+    def _run_callback(self, location, callback, *args, **kwargs):
+        try:
+            callback(*args, **kwargs)
+        except Exception as e:
+            logger.exception(f"Error occurred in {location} callback: {e}")
