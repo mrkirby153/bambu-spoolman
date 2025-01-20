@@ -4,11 +4,15 @@ import os
 EXTERNAL_SPOOL_ID = 255
 
 
-def _settings_file():
+def get_configuration_path(path):
     configuration_directory = os.environ.get("BAMBU_SPOOLMAN_CONFIG")
     if configuration_directory is None:
-        return "settings.json"
-    return os.path.join(configuration_directory, "settings.json")
+        return path
+    return os.path.join(configuration_directory, path)
+
+
+def _settings_file():
+    return get_configuration_path("settings.json")
 
 
 def save_settings(settings):
