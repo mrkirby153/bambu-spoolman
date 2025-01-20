@@ -71,6 +71,8 @@ class StatefulPrinterInfo:
 
 stateful_printer_info = StatefulPrinterInfo()
 
+MAX_BACKOFF_DURATION = 60
+
 
 class MqttHandler(threading.Thread):
 
@@ -83,6 +85,8 @@ class MqttHandler(threading.Thread):
 
         self.client = self._create_client()
         self.callbacks = {"on_connect": [], "on_message": [], "on_disconnect": []}
+
+        self.backoff = None
 
         super().__init__()
         self.daemon = True
@@ -117,11 +121,17 @@ class MqttHandler(threading.Thread):
                     last_error = "oserror113"
                     time.sleep(5)
                 else:
-                    logger.error(f"Error occurred in MQTT loop: {e}")
-                    time.sleep(1)
+                    duration = self._backoff()
+                    logger.error(
+                        f"Error occurred in MQTT loop. Retrying in {duration}s: {e}"
+                    )
+                    time.sleep(duration)
             except Exception as e:
-                logger.exception(f"Error occurred in MQTT loop: {e}")
-                time.sleep(1)
+                duration = self._backoff()
+                logger.exception(
+                    f"Error occurred in MQTT loop. Retrying in {duration}s: {e}"
+                )
+                time.sleep(duration)
 
     def add_callback(self, callback: Callable[["MqttHandler", dict], None]):
         self.callbacks["on_message"].append(callback)
@@ -144,6 +154,7 @@ class MqttHandler(threading.Thread):
         for message in self.pending_messages:
             self.publish(message)
         self.pending_messages = []
+        self.backoff = None
 
     def _on_message(self, client, userdata, msg):
         logger.debug(
@@ -189,3 +200,11 @@ class MqttHandler(threading.Thread):
 
     def _subscribe(self):
         self.client.subscribe(f"device/{self.printer_serial}/report")
+
+    def _backoff(self):
+        if self.backoff is None:
+            self.backoff = 0
+            return 2**0
+        else:
+            self.backoff += 1
+            return min(2**self.backoff, MAX_BACKOFF_DURATION)
