@@ -1,6 +1,7 @@
 import os
 
 import requests
+import urllib3
 from loguru import logger
 
 
@@ -14,7 +15,7 @@ class SpoolmanClient:
         self.verify = os.environ.get("SPOOLMAN_VERIFY", "true").lower() == "true"
 
         if not self.verify:
-            logger.warning("SSL verification for Spoolman API is disabled.")
+            urllib3.disable_warnings()
 
     def validate(self):
         """
