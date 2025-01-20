@@ -50,7 +50,7 @@ def evaluate_gcode(gcode):
     Evaluate the gcode and return the filament usage (in mm) per layer
     """
     operations = parse_gcode(gcode)
-    logger.info(f"Found {len(operations)} operations")
+    logger.debug(f"Found {len(operations)} operations")
 
     current_layer = 0  # The current layer
     current_extrusion = {}  # Running total of extrusion per filament on this layer
