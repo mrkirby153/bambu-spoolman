@@ -25,4 +25,4 @@ def load_settings():
     if os.path.exists(settings_file_path):
         with open(settings_file_path) as f:
             return json.load(f)
-    return {}
+    return {"trays": {}, "tray_count": 0}
