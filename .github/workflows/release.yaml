@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Release Docker image
 
 on:
   push:
@@ -44,3 +44,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
