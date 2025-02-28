@@ -1,9 +1,11 @@
 import os
 import tempfile
+from urllib.parse import urlparse
 
 import requests
 from loguru import logger
 
+from bambu_spoolman.bambu_ftp import retrieve_3mf
 from bambu_spoolman.broker.checkpoint import (
     clear as clear_checkpoint,
 )
@@ -78,42 +80,52 @@ class FilamentUsageTracker:
 
         self.spent_layers = set()
 
-        if model_url.startswith("http"):
-            if print_obj.get("use_ams", False):
-                logger.info("Using AMS")
-                self.ams_mapping = print_obj.get("ams_mapping", [])
-                self.using_ams = True
-                logger.info("AMS mapping: {}", self.ams_mapping)
-            else:
-                logger.info("Not using AMS")
-                self.using_ams = False
+        model = self._retrieve_model(model_url)
+        if model is None:
+            logger.error("Failed to retrieve model. Print will not be tracked")
+            return
 
-            gcode_file_name = print_obj.get("param")
-            downloaded_model = self._download_model(
-                model_url,
-            )
+        if print_obj.get("use_ams", False):
+            logger.info("Using AMS")
+            self.ams_mapping = print_obj.get("ams_mapping", [])
+            self.using_ams = True
+            logger.info("AMS mapping: {}", self.ams_mapping)
+        else:
+            logger.info("Not using AMS")
+            self.using_ams = False
 
-            if downloaded_model is None:
-                return
+        gcode_file_name = print_obj.get("param")
 
-            self._load_model(downloaded_model, gcode_file_name)
+        self._load_model(model, gcode_file_name)
 
-            save_checkpoint(
-                model_path=downloaded_model,
-                current_layer=0,
-                task_id=print_obj.get("task_id"),
-                subtask_id=print_obj.get("subtask_id"),
-                ams_mapping=self.ams_mapping,
-                gcode_file_name=gcode_file_name,
-            )
+        save_checkpoint(
+            model_path=model,
+            current_layer=0,
+            task_id=print_obj.get("task_id"),
+            subtask_id=print_obj.get("subtask_id"),
+            ams_mapping=self.ams_mapping,
+            gcode_file_name=gcode_file_name,
+        )
 
-            # Delete the downloaded model
-            os.remove(downloaded_model)
+        # Delete the downloaded model
+        os.remove(model)
 
-            # Spend layer 0 filament
-            self._handle_layer_change(0)
+        # Spend layer 0 filament
+        self._handle_layer_change(0)
+
+    def _retrieve_model(self, model_url):
+        logger.debug("Loading model from URL: {}", model_url)
+
+        # Turn URL into a URI
+        uri = urlparse(model_url)
+
+        if uri.scheme == "https" or uri.scheme == "http":
+            return self._download_model(model_url)
+        elif uri.scheme == "file":
+            return self._retrieve_model_from_ftp(uri.path)
         else:
             logger.warning("Unsupported model URL: {}", model_url)
+            return None
 
     def _handle_layer_change(self, layer):
         if self.active_model is None:
@@ -186,7 +198,7 @@ class FilamentUsageTracker:
             self.spoolman_client.consume_spool(spoolman_spool, length=usage)
 
     def _download_model(self, model_url):
-        logger.debug("Loading model from URL: {}", model_url)
+        logger.debug("Downloading model from URL: {}", model_url)
 
         with tempfile.NamedTemporaryFile(suffix=".3mf", delete=False) as model_file:
             temp_file_name = model_file.name
@@ -199,6 +211,16 @@ class FilamentUsageTracker:
 
             logger.debug("Model downloaded to {}", temp_file_name)
             return temp_file_name
+
+    def _retrieve_model_from_ftp(self, model_path):
+        logger.debug("Retrieving model from FTP path: {}", model_path)
+
+        # Remove the /sdcard/ prefix
+        if model_path.startswith("/sdcard/"):
+            model_path = model_path[8:]
+
+        # Retrieve from FTP server
+        return retrieve_3mf(model_path)
 
     def _load_model(self, model_path, gcode_file):
         gcode = extract_gcode(model_path, gcode_file)

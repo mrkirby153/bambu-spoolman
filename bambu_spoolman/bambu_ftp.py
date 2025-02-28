@@ -24,7 +24,7 @@ class ImplicitFTP_TLS(ftplib.FTP_TLS):
         self._sock = value
 
 
-def retrieve_cached_3mf(filename):
+def retrieve_3mf(filename):
     logger.debug("Retrieving cached 3mf file {}", filename)
     with ImplicitFTP_TLS() as ftp:
 
@@ -34,7 +34,6 @@ def retrieve_cached_3mf(filename):
         ftp.prot_p()
 
         # Check if the file exists
-        filename = f"/cache/{filename}"
         logger.debug("Checking if file {} exists", filename)
         try:
             size = ftp.size(filename)
