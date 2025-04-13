@@ -153,6 +153,12 @@ class FilamentUsageTracker:
 
     def _handle_print_end(self):
         logger.info("Print ended!")
+
+        # Spend all layers that haven't already been spent
+        for layer in set(self.active_model.keys()) - self.spent_layers:
+            logger.debug(f"Spending layer {layer} as it was not spent during the print")
+            self._handle_layer_change(layer)
+
         self.active_model = None
         self.ams_mapping = None
         self.using_ams = False
