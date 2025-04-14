@@ -8,6 +8,7 @@ export default function Index() {
       <div className="container mx-auto p-4">
         <h1 className="text-3xl text-center">Bambu Spoolman Integration</h1>
         <Suspense fallback={<div>Loading...</div>}>
+          <p>Testing 1234</p>
           <div className="mb-3">
             <Configuration />
           </div>
