@@ -1,3 +1,4 @@
 {
-  "css.customData": ["./.vscode/css-data.json"]
+  "css.customData": ["./.vscode/css-data.json"],
+  "tailwindCSS.classFunctions": ["cva", "cx"]
 }

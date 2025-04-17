@@ -111,7 +111,7 @@ function QrCodeButton() {
   }
   return (
     <Button
-      variant="primary"
+      intent="primary"
       onClick={() => setScanning(!scanning)}
       className="mt-2"
     >
@@ -197,18 +197,18 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
       {scanning ? <QrCodeScanner /> : <SpoolDetails spoolId={debounced} />}
 
       <div className="flex flex-row items-center gap-1">
-        <Button variant="danger" onClick={doClose}>
+        <Button intent="danger" onClick={doClose}>
           Cancel
         </Button>
         <Button
-          variant="neutral"
+          intent="neutral"
           onClick={removeSpool}
           disabled={spoolId == null}
         >
           Remove Spool
         </Button>
         <Button
-          variant="primary"
+          intent="primary"
           onClick={updateTray}
           disabled={spoolData == null || updateMutation.isError}
         >

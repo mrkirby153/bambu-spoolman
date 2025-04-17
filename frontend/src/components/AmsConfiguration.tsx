@@ -1,4 +1,3 @@
-import styles from "./AmsConfiguration.module.css";
 import useSettings from "@app/hooks/useSettings";
 import { usePopup } from "@app/stores/popupStore";
 import SpoolChangeModel from "./models/SpoolChangeModel";
@@ -33,7 +32,7 @@ export function AmsSlot(props: AmsSlotProps) {
       <div onClick={openChangeModel} className="cursor-pointer">
         <AmsSpoolChip
           spool={spool}
-          borderStyle={props.active ? styles.active : styles.inactive}
+          active={props.active}
           showUsage
           showMaterial
         />

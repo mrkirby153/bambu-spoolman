@@ -1,19 +1,28 @@
-import classNames from "classnames";
 import type { Spool } from "@app/types";
 import { MultiColorDirection } from "@app/types";
+import { cva, type VariantProps } from "class-variance-authority";
 
-export enum SpoolChipSize {
-  SMALL,
-  LARGE,
-}
+const spoolChip = cva(["border", "border-2"], {
+  variants: {
+    size: {
+      large: ["w-[60px]", "h-[60px]"],
+      small: ["w-[30px]", "h-[30px]"],
+    },
+    active: {
+      true: ["border-yellow-500"],
+      false: ["border-black"],
+    },
+  },
+  defaultVariants: {
+    active: false,
+  },
+});
 
-type SpoolChipProps = {
+interface SpoolChipProps extends VariantProps<typeof spoolChip> {
   spool: Spool | null;
-  size?: SpoolChipSize;
-  borderStyle?: string;
   showUsage?: boolean;
   showMaterial?: boolean;
-};
+}
 
 function getBackgroundColor(spool: Spool) {
   if (spool.filament.color_hex) {
@@ -50,8 +59,8 @@ function getBackgroundColor(spool: Spool) {
 
 export default function AmsSpoolChip({
   spool,
-  borderStyle,
-  size,
+  active,
+  size = "large",
   showUsage,
   showMaterial,
 }: SpoolChipProps) {
@@ -64,20 +73,11 @@ export default function AmsSpoolChip({
     percentage = (remainingLength / (remainingLength + usedLength)) * 100;
   }
 
-  let sizeClass = "w-[60px] h-[60px]";
-  switch (size) {
-    case SpoolChipSize.SMALL:
-      sizeClass = "w-[30px] h-[30px]";
-      break;
-    default:
-      break;
-  }
-
   return (
     <div className="flex flex-col items-center">
-      <div className={borderStyle || "border-black border-2"}>
+      <div className={spoolChip({ size, active })}>
         <div
-          className={classNames(sizeClass)}
+          className="h-full"
           style={{
             clipPath: `inset(${100 - percentage}% 0 0 0)`,
             background: spool ? getBackgroundColor(spool) : undefined,
