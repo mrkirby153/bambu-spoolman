@@ -24,5 +24,9 @@ def load_settings():
     settings_file_path = _settings_file()
     if os.path.exists(settings_file_path):
         with open(settings_file_path) as f:
-            return json.load(f)
+            data = json.load(f)
+
+            if os.environ.get("SPOOLMAN_SPOOL_FIELD_NAME") is None:
+                del data["locked_trays"]
+            return data
     return {"trays": {}, "tray_count": 0}
