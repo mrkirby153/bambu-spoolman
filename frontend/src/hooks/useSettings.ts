@@ -15,6 +15,7 @@ export type Settings = {
   tray_count: number;
   trays: Trays;
   active_tray: number | null;
+  locked_trays?: number[];
 };
 
 export default function useSettings() {

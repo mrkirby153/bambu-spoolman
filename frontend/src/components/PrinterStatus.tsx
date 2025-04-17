@@ -1,22 +1,11 @@
+import { usePrinterStatus } from "@app/hooks/status";
 import type { PrinterStatus } from "@app/types";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import React from "react";
-
-type PrinterStatusData = {
-  connected: boolean;
-  status: PrinterStatus;
-  last_update: number;
-};
 
 export default function PrinterStatus() {
   const queryClient = useQueryClient();
-  const { data } = useSuspenseQuery<PrinterStatusData>({
-    queryKey: ["printer-status"],
-    queryFn: async () => {
-      const response = await fetch("/api/printer-info");
-      return response.json();
-    },
-  });
+  const { data } = usePrinterStatus();
 
   const refresh = () => {
     queryClient.invalidateQueries({

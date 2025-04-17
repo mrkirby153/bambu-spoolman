@@ -14,6 +14,7 @@ type AmsSlotProps = {
   spoolId: number;
   slotId: number;
   active: boolean;
+  locked: boolean;
 };
 
 export function AmsSlot(props: AmsSlotProps) {
@@ -23,7 +24,7 @@ export function AmsSlot(props: AmsSlotProps) {
 
   const openChangeModel = () => {
     setSpoolId(props.spoolId);
-    open(<SpoolChangeModel trayId={props.slotId} />, {
+    open(<SpoolChangeModel trayId={props.slotId} locked={props.locked} />, {
       title: "Update Spool",
     });
   };
@@ -46,6 +47,7 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
   const start = props.id * 4;
   const end = start + 4;
   const trays = data.trays || {};
+  const locked_trays = data.locked_trays || [];
 
   const slots = [];
   for (let i = start; i < end; i++) {
@@ -56,6 +58,7 @@ export default function AmsConfiguration(props: AmsConfigurationProps) {
         slotId={i}
         spoolId={spool}
         active={i == data.active_tray}
+        locked={locked_trays.includes(i)}
       />,
     );
   }

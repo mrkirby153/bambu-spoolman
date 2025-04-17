@@ -13,8 +13,10 @@ import {
 import Button from "../Button";
 import Input from "../Input";
 import useChangeStore from "@app/stores/spoolChangeStore";
+import { useAmsTrayUuid } from "@app/hooks/status";
 
 export type FilamentChangeModelProps = {
+  locked: boolean;
   trayId: number;
 };
 
@@ -43,7 +45,7 @@ function SpoolInformation({ spool }: SpoolInformationProps) {
       </div>
       <div>
         <span className="font-bold">Remaining Weight: </span>
-        {spool.remaining_weight}g
+        {spool.remaining_weight.toFixed(2)}g
       </div>
     </div>
   );
@@ -128,6 +130,8 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const { error, setError, scanning, spoolId, setSpoolId } = useChangeStore();
   const debounced = useDebounce(spoolId, 500);
   const { data: spoolData } = useSpoolQuery(debounced);
+  const trayUuid = useAmsTrayUuid(props.trayId);
+
   const queryClient = useQueryClient();
   const updateMutation = useMutation({
     mutationFn: async ({
@@ -188,33 +192,45 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           placeholder="Spool ID"
           value={spoolId?.toString()}
           onChange={onSpoolIdChange}
+          disabled={props.locked}
         />
         {error && <div className="text-red-500">{error}</div>}
       </div>
+
+      {trayUuid && (
+        <>
+          <div className="font-bold mt-2">RFID Tag:</div>
+          <pre>{trayUuid?.tray_uuid}</pre>
+        </>
+      )}
 
       <QrCodeButton />
 
       {scanning ? <QrCodeScanner /> : <SpoolDetails spoolId={debounced} />}
 
-      <div className="flex flex-row items-center gap-1">
-        <Button intent="danger" onClick={doClose}>
-          Cancel
-        </Button>
-        <Button
-          intent="neutral"
-          onClick={removeSpool}
-          disabled={spoolId == null}
-        >
-          Remove Spool
-        </Button>
-        <Button
-          intent="primary"
-          onClick={updateTray}
-          disabled={spoolData == null || updateMutation.isError}
-        >
-          Update
-        </Button>
-      </div>
+      {!props.locked && (
+        <div className="flex flex-row items-center gap-1">
+          <Button intent="danger" onClick={doClose}>
+            Cancel
+          </Button>
+          <Button
+            intent="neutral"
+            onClick={removeSpool}
+            disabled={spoolId == null || props.locked}
+          >
+            Remove Spool
+          </Button>
+          <Button
+            intent="primary"
+            onClick={updateTray}
+            disabled={
+              spoolData == null || updateMutation.isError || props.locked
+            }
+          >
+            Update
+          </Button>
+        </div>
+      )}
     </Suspense>
   );
 }

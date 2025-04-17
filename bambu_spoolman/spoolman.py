@@ -52,7 +52,6 @@ class SpoolmanClient:
         response = requests.get(
             self._make_api_route(f"spool/{spool_id}"), verify=self.verify
         )
-        print(f"getting spool {spool_id}")
         if response.status_code != 200:
             return None
         return response.json()
@@ -73,6 +72,45 @@ class SpoolmanClient:
             verify=self.verify,
         )
         return response.json()
+    
+    def lookup_by_tray_uuid(self, tray_uuid):
+        """
+        Looks up a spoolman spool by the tray uuid
+        """
+        extra_field = os.environ.get("SPOOLMAN_SPOOL_FIELD_NAME")
+        if extra_field is None:
+            return None
+        all_spools = self.get_spools()
+
+        for spool in all_spools:
+            extra = spool.get("extra", {})
+            
+            data = extra.get(extra_field, None)
+            if data is not None and data == f"\"{tray_uuid}\"":
+                return spool
+        return None
+    
+    def set_tray_uuid(self, spool_id, tray_uuid):
+        """
+        Sets a tray's uuid
+        """
+        extra_field = os.environ.get("SPOOLMAN_SPOOL_FIELD_NAME")
+        if extra_field is None:
+            return False
+        existing_spool = self.get_spool(spool_id)
+        if existing_spool is None:
+            return False
+        # Get extra data
+        extra = existing_spool.get("extra", {})
+        # Set the new tray uuid
+        extra[extra_field] = f"\"{tray_uuid}\""
+        # Update the spool
+        response = requests.patch(
+            self._make_api_route(f"spool/{spool_id}"),
+            json={"extra": extra},
+            verify=self.verify,
+        )
+        return True if response.status_code == 200 else False
 
     def _make_api_route(self, route, **kwargs):
         query_string = "&".join([f"{k}={v}" for k, v in kwargs.items()])

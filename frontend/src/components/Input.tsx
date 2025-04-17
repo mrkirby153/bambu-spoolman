@@ -1,6 +1,16 @@
 import classNames from "classnames";
 import { InputHTMLAttributes } from "react";
 import styles from "./Input.module.css";
+import { cva } from "class-variance-authority";
+
+const input = cva(["border", "rounded", "p1"], {
+  variants: {
+    disabled: {
+      true: ["cursor-not-allowed", "bg-gray-100", "border-gray-200"],
+      false: ["border-gray-300"],
+    },
+  },
+});
 
 export default function Input({
   className,
@@ -10,7 +20,7 @@ export default function Input({
     <input
       {...props}
       className={classNames(
-        "border border-gray-300 rounded p-1",
+        input({ disabled: props.disabled }),
         className,
         styles.textField,
       )}

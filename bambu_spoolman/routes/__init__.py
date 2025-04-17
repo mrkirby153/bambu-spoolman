@@ -1,6 +1,11 @@
 from flask import Blueprint, g, request
 
-from bambu_spoolman.broker.commands import get_printer_status, get_tray_count, testing
+from bambu_spoolman.broker.commands import (
+    get_printer_status,
+    get_tray_count,
+    resync_trays,
+    testing,
+)
 from bambu_spoolman.settings import load_settings, save_settings
 
 blueprint = Blueprint("bambu_spoolman", __name__, url_prefix="/api")
@@ -47,6 +52,15 @@ def update_tray(tray_id):
 
     settings = load_settings()
     trays = settings.get("trays", {})
+
+    locked_trays = settings.get("locked_trays", [])
+    print(f"Locked trays: {locked_trays}")
+    if int(tray_id) in locked_trays:
+        return {
+            "status": "error",
+            "message": "Tray is locked and cannot be changed",
+        }, 400
+
     spool_id = data.get("spool_id")
     if spool_id is None:
         if tray_id in trays:
@@ -81,3 +95,39 @@ def printer_info():
 @blueprint.route("/daemon-test/<one>/<two>")
 def daemon_test(one, two):
     return testing(int(one), int(two)).execute()
+
+@blueprint.route("/by-uuid/<uuid>")
+def tray_lookup(uuid):
+    resp = g.spoolman.lookup_by_tray_uuid(uuid)
+    if resp is None:
+        return {
+            "status": "error",
+            "message": "Not found"
+        }, 404
+    return resp
+
+@blueprint.route("/set-uuid/<spool_id>", methods=["POST"])
+def tray_update(spool_id):
+    data = request.json
+    if "tray_uuid" not in data:
+        return {"status": "error", "message": "Missing 'tray_uuid'"}, 400
+    tray_uuid = data.get("tray_uuid")
+    if tray_uuid is None:
+        return {"status": "error", "message": "Missing 'tray_uuid'"}, 400
+    
+    spool = g.spoolman.get_spool(spool_id)
+
+    if spool is None:
+        return {"status": "error", "message": "Spool not found"}, 404
+    
+    success = g.spoolman.set_tray_uuid(spool_id, tray_uuid)
+
+    # TODO: Lock any spools that match the tray uuid
+    
+    resync_trays().execute()
+
+    
+    return {"status": "ok"} if success else {
+        "status": "error",
+        "message": "Failed to set tray uuid"
+    }, 500

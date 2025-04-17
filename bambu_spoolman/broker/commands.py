@@ -1,4 +1,5 @@
 from bambu_spoolman.bambu_mqtt import stateful_printer_info
+from bambu_spoolman.broker.automatic_spool_switch import AutomaticSpoolSwitch
 from bambu_spoolman.broker.command import command
 from bambu_spoolman.settings import load_settings
 
@@ -26,3 +27,7 @@ def get_tray_count():
             return load_settings().get("tray_count", 0)
     else:
         return load_settings().get("tray_count", 0)
+
+@command
+def resync_trays():
+    AutomaticSpoolSwitch.get_instance().sync()
