@@ -8,7 +8,12 @@ export default function ExternalSpoolConfiguration() {
   return (
     <>
       <div className="flex">
-        <AmsSlot slotId={255} spoolId={activeSpool} active={false} />
+        <AmsSlot
+          slotId={255}
+          spoolId={activeSpool}
+          active={false}
+          locked={false}
+        />
       </div>
     </>
   );
