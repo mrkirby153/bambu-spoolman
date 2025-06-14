@@ -1,20 +1,20 @@
 FROM python:3.13-alpine AS base
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
 FROM base AS builder
 
 RUN apk add --no-cache gcc musl-dev
 
-RUN pip install poetry
 RUN python -m venv /venv
 
-COPY pyproject.toml poetry.lock ./
-
-RUN poetry export -f requirements.txt --without dev > requirements.txt | /venv/bin/pip install -r /dev/stdin
-
 COPY . .
-RUN poetry build && /venv/bin/pip install dist/*.whl
+
+RUN uv sync --locked
+
+RUN uv build && /venv/bin/pip install dist/*.whl
 
 
 FROM node:23-alpine AS frontend_builder

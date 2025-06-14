@@ -1,32 +1,31 @@
-[tool.poetry]
+[project]
 name = "bambu-spoolman"
 version = "0.1.0"
 description = ""
-authors = ["mrkirby153 <mr.austinwhyte@gmail.com>"]
+authors = [{ name = "mrkirby153", email = "mr.austinwhyte@gmail.com" }]
+requires-python = "~=3.13"
 readme = "README.md"
+dependencies = [
+    "loguru>=0.7.3,<0.8",
+    "requests>=2.32.3,<3",
+    "flask>=3.1.0,<4",
+    "gunicorn>=23.0.0,<24",
+    "python-dotenv>=1.0.1,<2",
+    "asyncio>=3.4.3,<4",
+    "paho-mqtt>=2.1.0,<3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.13"
-loguru = "^0.7.3"
-requests = "^2.32.3"
-flask = "^3.1.0"
-gunicorn = "^23.0.0"
-python-dotenv = "^1.0.1"
-asyncio = "^3.4.3"
-paho-mqtt = "^2.1.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 bambu-spoolman = "bambu_spoolman:main"
 bambu-spoolman-broker = "bambu_spoolman.daemon:main"
 mqtt-replay = "bambu_spoolman.debug.replay:main"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.8.6"
+[dependency-groups]
+dev = ["ruff>=0.8.6,<0.9"]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
