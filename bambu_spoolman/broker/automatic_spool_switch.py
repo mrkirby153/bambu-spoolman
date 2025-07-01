@@ -6,6 +6,7 @@ from bambu_spoolman.spoolman import new_client
 
 UNKNOWN_TRAY = "00000000000000000000000000000000"
 
+
 class AutomaticSpoolSwitch:
 
     _INSTANCE = None
@@ -24,12 +25,10 @@ class AutomaticSpoolSwitch:
         print_obj = message.get("print", {})
         command = print_obj.get("command")
 
-
         if command == "push_status":
             if "ams" not in print_obj:
                 return
             self._sync_trays(print_obj)
-            
 
     def sync(self):
         if not stateful_printer_info.connected:
@@ -84,13 +83,15 @@ class AutomaticSpoolSwitch:
                 prev = prev_tray_mapping.get(tray_id, None)
                 logger.debug("Tray {}: {} -> {}", tray_id, prev, tray_uuid)
                 if prev != tray_uuid:
-                    if (tray_uuid == UNKNOWN_TRAY or tray_uuid is None) and prev is not None:
+                    if (
+                        tray_uuid == UNKNOWN_TRAY or tray_uuid is None
+                    ) and prev is not None:
                         # Tray was removed. Unlock the spool and clear the mapping
                         logger.debug("Unlocking tray {}: {}", tray_id, prev)
                         self._unlock_tray(tray_id, clear=True)
                     if prev != tray_uuid:
                         # Spool was changed. Update the mapping and lock if it exists
-                        logger.debug("Tray changed. Looking up spool {}",tray_uuid)
+                        logger.debug("Tray changed. Looking up spool {}", tray_uuid)
                         spool = self.spoolman_client.lookup_by_tray_uuid(tray_uuid)
                         if spool is not None:
                             spool_id = spool["id"]
@@ -98,16 +99,17 @@ class AutomaticSpoolSwitch:
                             self._lock_spool(tray_id, spool_id)
                         else:
                             logger.debug("Spool {} not found", tray_uuid)
-                
-                self.tray_mapping[tray_id] = tray_uuid
 
+                self.tray_mapping[tray_id] = tray_uuid
 
     def _lock_spool(self, tray_id, spool_id):
         settings = load_settings()
         trays = settings.get("trays", {})
         trays[str(tray_id)] = spool_id
         settings["trays"] = trays
-        settings["locked_trays"] = list(set(settings.get("locked_trays", [])+ [tray_id]))
+        settings["locked_trays"] = list(
+            set(settings.get("locked_trays", []) + [tray_id])
+        )
         save_settings(settings)
         logger.debug("Locked tray {}: {}", tray_id, spool_id)
 

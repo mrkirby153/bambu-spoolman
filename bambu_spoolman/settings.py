@@ -27,6 +27,6 @@ def load_settings():
             data = json.load(f)
 
             if os.environ.get("SPOOLMAN_SPOOL_FIELD_NAME") is None:
-                del data["locked_trays"]
+                data["locked_trays"] = []
             return data
     return {"trays": {}, "tray_count": 0}

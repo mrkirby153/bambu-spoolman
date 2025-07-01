@@ -128,8 +128,8 @@ const spoolmanRegex = /web\+spoolman:s-(\d+)/;
 export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const { close } = usePopup();
   const { error, setError, scanning, spoolId, setSpoolId } = useChangeStore();
-  const debounced = useDebounce(spoolId, 500);
-  const { data: spoolData } = useSpoolQuery(debounced);
+  const debouncedSpoolId = useDebounce(spoolId, 500);
+  const { data: spoolData } = useSpoolQuery(debouncedSpoolId);
   const trayUuid = useAmsTrayUuid(props.trayId);
 
   const queryClient = useQueryClient();
@@ -156,12 +156,36 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
       doClose();
     },
   });
+
+  const uuidMutation = useMutation({
+    mutationFn: async ({ spoolId }: { spoolId: number }) => {
+      const result = await fetch(`/api/set-uuid/${spoolId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tray_uuid: trayUuid?.tray_uuid,
+        }),
+      });
+      if (!result.ok) {
+        const error = await result.json();
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      doClose();
+    },
+  });
+
   // Sync mutation errors to the store
   useEffect(() => {
     if (updateMutation.error) {
       setError(updateMutation.error.message);
     }
-  }, [updateMutation.error, setError]);
+    if (uuidMutation.error) {
+      setError(uuidMutation.error.message);
+    }
+  }, [updateMutation.error, uuidMutation.error, setError]);
 
   const doClose = () => {
     close();
@@ -169,7 +193,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   };
 
   const updateTray = () => {
-    updateMutation.mutate({ trayId: props.trayId, spoolId: debounced });
+    updateMutation.mutate({ trayId: props.trayId, spoolId: debouncedSpoolId });
   };
 
   const onSpoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,30 +230,56 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
 
       <QrCodeButton />
 
-      {scanning ? <QrCodeScanner /> : <SpoolDetails spoolId={debounced} />}
+      {scanning ? (
+        <QrCodeScanner />
+      ) : (
+        <SpoolDetails spoolId={debouncedSpoolId} />
+      )}
 
       {!props.locked && (
-        <div className="flex flex-row items-center gap-1">
-          <Button intent="danger" onClick={doClose}>
-            Cancel
-          </Button>
-          <Button
-            intent="neutral"
-            onClick={removeSpool}
-            disabled={spoolId == null || props.locked}
-          >
-            Remove Spool
-          </Button>
-          <Button
-            intent="primary"
-            onClick={updateTray}
-            disabled={
-              spoolData == null || updateMutation.isError || props.locked
-            }
-          >
-            Update
-          </Button>
-        </div>
+        <>
+          <div className="flex flex-row items-center gap-1">
+            <Button intent="danger" onClick={doClose}>
+              Cancel
+            </Button>
+            <Button
+              intent="neutral"
+              onClick={removeSpool}
+              disabled={spoolId == null || props.locked}
+            >
+              Remove Spool
+            </Button>
+            <Button
+              intent="primary"
+              onClick={updateTray}
+              disabled={
+                spoolData == null || updateMutation.isError || props.locked
+              }
+            >
+              Update
+            </Button>
+          </div>
+          <div className="flex flex-row items-center gap-1 pt-2">
+            {trayUuid && (
+              <Button
+                intent="neutral"
+                onClick={() => {
+                  if (trayUuid) {
+                    uuidMutation.mutate({ spoolId: debouncedSpoolId || 0 });
+                  }
+                }}
+                disabled={
+                  uuidMutation.isError ||
+                  updateMutation.isError ||
+                  props.locked ||
+                  spoolData == null
+                }
+              >
+                Set RFID Tag
+              </Button>
+            )}
+          </div>
+        </>
       )}
     </Suspense>
   );

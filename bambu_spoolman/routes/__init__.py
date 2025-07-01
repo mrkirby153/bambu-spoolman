@@ -96,15 +96,14 @@ def printer_info():
 def daemon_test(one, two):
     return testing(int(one), int(two)).execute()
 
+
 @blueprint.route("/by-uuid/<uuid>")
 def tray_lookup(uuid):
     resp = g.spoolman.lookup_by_tray_uuid(uuid)
     if resp is None:
-        return {
-            "status": "error",
-            "message": "Not found"
-        }, 404
+        return {"status": "error", "message": "Not found"}, 404
     return resp
+
 
 @blueprint.route("/set-uuid/<spool_id>", methods=["POST"])
 def tray_update(spool_id):
@@ -114,20 +113,20 @@ def tray_update(spool_id):
     tray_uuid = data.get("tray_uuid")
     if tray_uuid is None:
         return {"status": "error", "message": "Missing 'tray_uuid'"}, 400
-    
+
     spool = g.spoolman.get_spool(spool_id)
+
+    print("spool", spool)
 
     if spool is None:
         return {"status": "error", "message": "Spool not found"}, 404
-    
+
     success = g.spoolman.set_tray_uuid(spool_id, tray_uuid)
 
-    # TODO: Lock any spools that match the tray uuid
-    
     resync_trays().execute()
 
-    
-    return {"status": "ok"} if success else {
-        "status": "error",
-        "message": "Failed to set tray uuid"
-    }, 500
+    return (
+        {"status": "ok"}
+        if success
+        else {"status": "error", "message": "Failed to set tray uuid"}
+    ), (200 if success else 500)

@@ -19,12 +19,15 @@ export function usePrinterStatus() {
 export function useAmsTrayUuid(tray: number) {
   const { data } = usePrinterStatus();
 
-  const ams = tray % 4;
-  const ams_tray = Math.floor(tray / 4);
-  const ams_tray_uuid = data.status.print.ams.ams[ams]?.tray.filter(
+  const ams_tray = tray % 4;
+  const ams = Math.floor(tray / 4);
+  const ams_tray_uuid = data.status.print?.ams?.ams[ams]?.tray?.filter(
     (t) => t.id == ams_tray.toString(),
-  )[0];
-  if (!ams_tray_uuid) {
+  )?.[0];
+  if (
+    !ams_tray_uuid ||
+    ams_tray_uuid.tray_uuid === "00000000000000000000000000000000"
+  ) {
     return null;
   }
   return ams_tray_uuid;
