@@ -1,0 +1,13 @@
+services:
+  bambu-spoolman:
+    image: ghcr.io/mrkirby153/bambu-spoolman:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - config:${BAMBU_SPOOLMAN_CONFIG}
+    ports:
+      - ${BAMBU_SPOOLMAN_PORT}:80
+volumes:
+  config:
+    driver: local
