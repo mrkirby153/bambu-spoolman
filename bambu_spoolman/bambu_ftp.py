@@ -3,6 +3,7 @@ import os
 import ssl
 import tempfile
 
+from pathlib import Path
 from loguru import logger
 
 
@@ -46,8 +47,16 @@ def retrieve_3mf(filename):
             size = ftp.size(filename)
             logger.debug("File {} exists, size: {}", filename, size)
         except ftplib.error_perm:
-            logger.error("File {} does not exist", filename)
-            return None
+            logger.error("File {} not found, retrying with file name at the root", filename)
+            try:
+                p = Path(filename).parts
+                logger.debug(f"Trying to find file at /{p[-1]}")
+                size = ftp.size(p[-1])
+                filename = p[-1]
+                logger.debug("File exists at {} , size: {}", filename, size)
+            except ftplib.error_perm:
+                logger.error(f"File really does not exist, ignoring")
+                return None
 
         # Get the file
         logger.debug("Retrieving file {}", filename)
