@@ -123,6 +123,18 @@ class FilamentUsageTracker:
             return self._download_model(model_url)
         elif uri.scheme == "file":
             return self._retrieve_model_from_ftp(uri.path)
+        elif uri.scheme == "brtc":
+            # For brtc://emmc/... URIs, netloc is "emmc" and path is the filename
+            # We need to map emmc to cache/ on the FTP server
+            if uri.netloc == "emmc":
+                # Remove leading slash from path and prepend cache/
+                path = uri.path.lstrip("/")
+                model_path = f"cache/{path}" if path else "cache/"
+                logger.debug("Mapped brtc://emmc/ to cache/: {}", model_path)
+                return self._retrieve_model_from_ftp(model_path)
+            else:
+                logger.warning("Unsupported brtc netloc: {}, using path as-is", uri.netloc)
+                return self._retrieve_model_from_ftp(uri.path)
         else:
             logger.warning("Unsupported model URL: {}", model_url)
             return None
