@@ -112,6 +112,50 @@ class SpoolmanClient:
         )
         return True if response.status_code == 200 else False
 
+    def set_active_tray(self, spool_id, active_tray_id):
+        """
+        Sets the tray field for a spool
+        active_tray_id should be in format: ams_{ams_id}_tray_{tray_id}
+        Pass empty string to clear the tray field
+        Uses SPOOLMAN_TRAY_FIELD_NAME environment variable
+        Returns False if SPOOLMAN_TRAY_FIELD_NAME is not set
+        """
+        tray_field_name = os.environ.get("SPOOLMAN_TRAY_FIELD_NAME")
+
+        # Skip if the environment variable is not set
+        if tray_field_name is None:
+            logger.debug("SPOOLMAN_TRAY_FIELD_NAME not set, skipping tray field update")
+            return False
+
+        existing_spool = self.get_spool(spool_id)
+        if existing_spool is None:
+            logger.warning(f"Spool {spool_id} not found, cannot set {tray_field_name}")
+            return False
+
+        # Get extra data
+        extra = existing_spool.get("extra", {})
+
+        # Set or clear the tray field
+        if active_tray_id:
+            extra[tray_field_name] = f"\"{active_tray_id}\""
+        else:
+            # Clear by setting to empty string
+            extra[tray_field_name] = '""'
+
+        # Update the spool
+        response = requests.patch(
+            self._make_api_route(f"spool/{spool_id}"),
+            json={"extra": extra},
+            verify=self.verify,
+        )
+
+        if response.status_code == 200:
+            logger.debug(f"Set {tray_field_name} for spool {spool_id} to: {active_tray_id}")
+            return True
+        else:
+            logger.error(f"Failed to set {tray_field_name} for spool {spool_id}: {response.status_code}")
+            return False
+
     def _make_api_route(self, route, **kwargs):
         query_string = "&".join([f"{k}={v}" for k, v in kwargs.items()])
         if query_string:

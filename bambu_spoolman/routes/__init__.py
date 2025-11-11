@@ -61,11 +61,24 @@ def update_tray(tray_id):
             "message": "Tray is locked and cannot be changed",
         }, 400
 
+    tray_id_int = int(tray_id)
     spool_id = data.get("spool_id")
+
+    # Get the old spool_id if there was one, so we can clear its tray field
+    old_spool_id = trays.get(tray_id)
+
     if spool_id is None:
+        # Clearing the tray assignment
         if tray_id in trays:
             del trays[tray_id]
             settings["trays"] = trays
+
+        # Clear the tray field in Spoolman for the old spool
+        if old_spool_id is not None:
+            try:
+                g.spoolman.set_active_tray(old_spool_id, "")
+            except Exception as e:
+                print(f"Failed to clear tray field for spool {old_spool_id}: {e}")
     else:
         spool_id = int(spool_id)
         spool = g.spoolman.get_spool(spool_id)
@@ -80,6 +93,25 @@ def update_tray(tray_id):
                 }, 400
 
         trays[tray_id] = spool_id
+
+        # Set the tray field in Spoolman for the new spool
+        # Calculate AMS and tray slot (AMS is 0-indexed, tray is 1-indexed)
+        ams_id = tray_id_int // 4
+        tray_slot_id = (tray_id_int % 4) + 1
+        active_tray_id = f"ams_{ams_id}_tray_{tray_slot_id}"
+
+        try:
+            g.spoolman.set_active_tray(spool_id, active_tray_id)
+        except Exception as e:
+            print(f"Failed to set tray field for spool {spool_id}: {e}")
+
+        # Clear the tray field for the old spool if it was different
+        if old_spool_id is not None and old_spool_id != spool_id:
+            try:
+                g.spoolman.set_active_tray(old_spool_id, "")
+            except Exception as e:
+                print(f"Failed to clear tray field for old spool {old_spool_id}: {e}")
+
     settings["trays"] = trays
     save_settings(settings)
 
