@@ -338,9 +338,10 @@ class SpoolmanClient:
         logger.debug(f"No external filament match for {material} with colors {ams_colors}")
         return None
 
-    def create_filament_from_external(self, external_filament):
+    def create_filament_from_external(self, external_filament, tray_material=None):
         """
         Creates a filament from an external filament definition
+        tray_material: Optional material from tray (e.g. "PLA Matte") to preserve full variant
         Returns the created filament or None on failure
         """
         try:
@@ -359,9 +360,13 @@ class SpoolmanClient:
                 logger.error(f"Failed to get or create vendor: {vendor_name}")
                 return None
 
+            # Use tray material if provided to preserve variants like "PLA Matte", "PLA Basic"
+            # Otherwise fall back to external filament's material
+            material = tray_material if tray_material else external_filament.get("material", "PLA")
+
             filament_data = {
                 "name": external_filament.get("name", "Unknown"),
-                "material": external_filament.get("material", "PLA"),
+                "material": material,
                 "vendor_id": vendor["id"],
                 "color_hex": external_filament.get("color_hex", "000000"),
                 "diameter": external_filament.get("diameter", 1.75),
@@ -421,8 +426,8 @@ class SpoolmanClient:
 
         filament = None
         if external_filament:
-            # Try to create from external filament
-            filament = self.create_filament_from_external(external_filament)
+            # Try to create from external filament, passing the tray material to preserve variant
+            filament = self.create_filament_from_external(external_filament, material)
 
         if filament is None:
             # Fall back to basic filament creation
