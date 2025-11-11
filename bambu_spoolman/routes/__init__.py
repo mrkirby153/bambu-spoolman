@@ -65,7 +65,8 @@ def update_tray(tray_id):
     spool_id = data.get("spool_id")
 
     # Get the old spool_id if there was one, so we can clear its tray field
-    old_spool_id = trays.get(tray_id)
+    # Try both string and int keys for compatibility
+    old_spool_id = trays.get(tray_id) or trays.get(tray_id_int)
 
     if spool_id is None:
         # Clearing the tray assignment

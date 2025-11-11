@@ -1,4 +1,5 @@
 import os
+import time
 
 import requests
 import urllib3
@@ -13,6 +14,8 @@ class SpoolmanClient:
     def __init__(self, endpoint):
         self.endpoint = endpoint
         self.verify = os.environ.get("SPOOLMAN_VERIFY", "true").lower() == "true"
+        self._external_filaments_cache = None
+        self._external_filaments_cache_time = None
 
         if not self.verify:
             urllib3.disable_warnings()
@@ -44,6 +47,42 @@ class SpoolmanClient:
         """
         response = requests.get(self._make_api_route("spool"), verify=self.verify)
         return response.json()
+
+    def get_external_filaments(self, use_cache=True):
+        """
+        Get a list of all external filaments from SpoolmanDB
+        Caches the result for 1 hour to avoid repeated large fetches
+        Set use_cache=False to force a fresh fetch
+        """
+        # Check cache (1 hour = 3600 seconds)
+        cache_ttl = 3600
+        if use_cache and self._external_filaments_cache is not None:
+            if self._external_filaments_cache_time is not None:
+                age = time.time() - self._external_filaments_cache_time
+                if age < cache_ttl:
+                    logger.debug(f"Using cached external filaments ({int(age)}s old)")
+                    return self._external_filaments_cache
+
+        # Fetch fresh data
+        try:
+            logger.info("Fetching external filaments from SpoolmanDB...")
+            response = requests.get(
+                self._make_api_route("external/filament"),
+                verify=self.verify,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                # Update cache
+                self._external_filaments_cache = data
+                self._external_filaments_cache_time = time.time()
+                logger.info(f"Cached {len(data)} external filaments")
+                return data
+            else:
+                logger.warning(f"Failed to get external filaments: {response.status_code}")
+                return self._external_filaments_cache or []  # Return stale cache if available
+        except Exception as e:
+            logger.error(f"Exception getting external filaments: {e}")
+            return self._external_filaments_cache or []  # Return stale cache if available
 
     def get_spool(self, spool_id):
         """
@@ -155,6 +194,280 @@ class SpoolmanClient:
         else:
             logger.error(f"Failed to set {tray_field_name} for spool {spool_id}: {response.status_code}")
             return False
+
+    def create_filament(self, vendor_name, material, color_hex, diameter=1.75, weight=1000):
+        """
+        Creates a new filament in Spoolman
+        Returns the created filament or None on failure
+        """
+        # First, get or create the vendor
+        vendor = self._get_or_create_vendor(vendor_name)
+        if vendor is None:
+            logger.error(f"Failed to get or create vendor: {vendor_name}")
+            return None
+
+        filament_data = {
+            "name": f"{material} {color_hex}",
+            "material": material,
+            "vendor_id": vendor["id"],
+            "color_hex": color_hex,
+            "diameter": diameter,
+            "weight": weight,
+            "density": 1.24,  # Default PLA density
+            "spool_weight": 250,  # Bambu Lab default
+        }
+
+        try:
+            response = requests.post(
+                self._make_api_route("filament"),
+                json=filament_data,
+                verify=self.verify,
+            )
+            if response.status_code in [200, 201]:
+                logger.info(f"Created filament: {material} {color_hex}")
+                return response.json()
+            else:
+                logger.error(f"Failed to create filament: {response.status_code} {response.text}")
+                return None
+        except Exception as e:
+            logger.error(f"Exception creating filament: {e}")
+            return None
+
+    def create_spool(self, filament_id, tray_uuid, initial_weight=1000):
+        """
+        Creates a new spool in Spoolman
+        Returns the created spool or None on failure
+        """
+        extra_field = os.environ.get("SPOOLMAN_SPOOL_FIELD_NAME")
+        extra = {}
+        if extra_field:
+            extra[extra_field] = f'"{tray_uuid}"'
+
+        spool_data = {
+            "filament_id": filament_id,
+            "initial_weight": initial_weight,
+            "remaining_weight": initial_weight,
+            "spool_weight": 250,  # Bambu Lab default
+            "extra": extra,
+        }
+
+        try:
+            response = requests.post(
+                self._make_api_route("spool"),
+                json=spool_data,
+                verify=self.verify,
+            )
+            if response.status_code in [200, 201]:
+                logger.info(f"Created spool with filament_id {filament_id}")
+                return response.json()
+            else:
+                logger.error(f"Failed to create spool: {response.status_code} {response.text}")
+                return None
+        except Exception as e:
+            logger.error(f"Exception creating spool: {e}")
+            return None
+
+    def match_external_filament(self, tray_data):
+        """
+        Finds a matching external filament by material and colors
+        Uses the same logic as bambulab-ams-spoolman-filamentstatus
+        Returns the best match or None
+        """
+        external_filaments = self.get_external_filaments()
+        if not external_filaments:
+            logger.debug("No external filaments available")
+            return None
+
+        material = tray_data.get("tray_sub_brands", "")
+        cols = tray_data.get("cols", [])
+        tray_color = tray_data.get("tray_color", "")
+
+        # Get color array (multi-color support)
+        if cols and len(cols) > 0:
+            ams_colors = [c[:6].lower() for c in cols]
+        elif tray_color:
+            ams_colors = [tray_color[:6].lower()]
+        else:
+            ams_colors = []
+
+        ams_colors.sort()
+
+        # Material transformations (from the other project)
+        def transform_material(mat, transformation_type):
+            if transformation_type == 0:
+                return mat.lower()
+            elif transformation_type == 1:
+                return mat.replace(" ", "_").lower()
+            elif transformation_type == 2:
+                return mat.split(" ")[0].replace(" ", "").lower()
+            return mat.lower()
+
+        # Try each transformation
+        for transform_type in range(3):
+            transformed_material = transform_material(material, transform_type)
+
+            for ext_fil in external_filaments:
+                # Get external filament colors
+                if ext_fil.get("color_hex"):
+                    ext_colors = [ext_fil["color_hex"].lower()]
+                elif ext_fil.get("color_hexes"):
+                    ext_colors = [c.lower() for c in ext_fil["color_hexes"]]
+                else:
+                    ext_colors = []
+
+                ext_colors.sort()
+
+                # Check if colors match
+                color_matches = (ams_colors == ext_colors) if ams_colors else True
+
+                # Check if ID matches pattern
+                ext_id = ext_fil.get("id", "").lower()
+                id_matches = False
+
+                if "support" in material.lower():
+                    # For support materials, use tray_type
+                    tray_type = tray_data.get("tray_type", "").split("-")[0].lower()
+                    id_matches = ext_id.startswith(f"bambulab_{tray_type}_{transformed_material}")
+                else:
+                    id_matches = ext_id.startswith(f"bambulab_{transformed_material}")
+
+                if id_matches and color_matches:
+                    logger.info(f"Found external filament match: {ext_fil.get('name')} (id: {ext_id})")
+                    return ext_fil
+
+        logger.debug(f"No external filament match for {material} with colors {ams_colors}")
+        return None
+
+    def create_filament_from_external(self, external_filament):
+        """
+        Creates a filament from an external filament definition
+        Returns the created filament or None on failure
+        """
+        try:
+            # Get or create the vendor
+            manufacturer = external_filament.get("manufacturer", {})
+            # Handle both dict and string manufacturer
+            if isinstance(manufacturer, dict):
+                vendor_name = manufacturer.get("name", "Unknown")
+            elif isinstance(manufacturer, str):
+                vendor_name = manufacturer
+            else:
+                vendor_name = "Unknown"
+
+            vendor = self._get_or_create_vendor(vendor_name)
+            if vendor is None:
+                logger.error(f"Failed to get or create vendor: {vendor_name}")
+                return None
+
+            filament_data = {
+                "name": external_filament.get("name", "Unknown"),
+                "material": external_filament.get("material", "PLA"),
+                "vendor_id": vendor["id"],
+                "color_hex": external_filament.get("color_hex", "000000"),
+                "diameter": external_filament.get("diameter", 1.75),
+                "weight": external_filament.get("weight", 1000),
+                "density": external_filament.get("density", 1.24),
+                "spool_weight": external_filament.get("spool_weight", 250),
+                "external_id": external_filament.get("id"),
+            }
+
+            response = requests.post(
+                self._make_api_route("filament"),
+                json=filament_data,
+                verify=self.verify,
+            )
+            if response.status_code in [200, 201]:
+                logger.info(f"Created filament from external: {filament_data['name']}")
+                return response.json()
+            else:
+                logger.error(f"Failed to create filament from external: {response.status_code} {response.text}")
+                return None
+        except Exception as e:
+            logger.error(f"Exception creating filament from external: {e}")
+            return None
+
+    def auto_create_spool_from_tray(self, tray_data):
+        """
+        Automatically creates a spool from tray data
+        First tries to match with external filaments, then falls back to basic creation
+        tray_data should contain: tray_uuid, tray_sub_brands (material), tray_color, tray_weight, tray_diameter
+        Returns the created spool or None on failure
+        """
+        tray_uuid = tray_data.get("tray_uuid")
+        material = tray_data.get("tray_sub_brands", "PLA")
+        color_hex = tray_data.get("tray_color", "000000")
+        tray_weight = tray_data.get("tray_weight")
+        diameter = tray_data.get("tray_diameter", "1.75")
+
+        # Clean up color hex (remove alpha channel if present)
+        if len(color_hex) == 8:
+            color_hex = color_hex[:6]
+
+        # Parse diameter and weight
+        try:
+            diameter_float = float(diameter)
+        except:
+            diameter_float = 1.75
+
+        try:
+            weight_int = int(tray_weight) if tray_weight else 1000
+        except:
+            weight_int = 1000
+
+        logger.info(f"Auto-creating spool: {material} {color_hex} ({weight_int}g)")
+
+        # Try to find matching external filament first
+        external_filament = self.match_external_filament(tray_data)
+
+        filament = None
+        if external_filament:
+            # Try to create from external filament
+            filament = self.create_filament_from_external(external_filament)
+
+        if filament is None:
+            # Fall back to basic filament creation
+            logger.info("Falling back to basic filament creation")
+            vendor_name = tray_data.get("vendor", "Bambu Lab")
+            filament = self.create_filament(vendor_name, material, color_hex, diameter_float, weight_int)
+            if filament is None:
+                return None
+
+        # Create the spool with the tray UUID
+        spool = self.create_spool(filament["id"], tray_uuid, weight_int)
+        return spool
+
+    def _get_or_create_vendor(self, vendor_name):
+        """
+        Gets a vendor by name or creates it if it doesn't exist
+        """
+        try:
+            # Try to find existing vendor
+            response = requests.get(self._make_api_route("vendor"), verify=self.verify)
+            if response.status_code == 200:
+                vendors = response.json()
+                for vendor in vendors:
+                    if vendor.get("name") == vendor_name:
+                        return vendor
+
+            # Vendor not found, create it
+            vendor_data = {
+                "name": vendor_name,
+                "empty_spool_weight": 250,
+            }
+            response = requests.post(
+                self._make_api_route("vendor"),
+                json=vendor_data,
+                verify=self.verify,
+            )
+            if response.status_code in [200, 201]:
+                logger.info(f"Created vendor: {vendor_name}")
+                return response.json()
+            else:
+                logger.error(f"Failed to create vendor: {response.status_code}")
+                return None
+        except Exception as e:
+            logger.error(f"Exception in _get_or_create_vendor: {e}")
+            return None
 
     def _make_api_route(self, route, **kwargs):
         query_string = "&".join([f"{k}={v}" for k, v in kwargs.items()])
