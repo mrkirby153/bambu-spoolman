@@ -96,8 +96,8 @@ def update_tray(tray_id):
         trays[tray_id] = spool_id
 
         # Set the tray field in Spoolman for the new spool
-        # Calculate AMS and tray slot (AMS is 0-indexed, tray is 1-indexed)
-        ams_id = tray_id_int // 4
+        # Calculate AMS and tray slot (both 1-indexed for display)
+        ams_id = (tray_id_int // 4) + 1
         tray_slot_id = (tray_id_int % 4) + 1
         active_tray_id = f"ams_{ams_id}_tray_{tray_slot_id}"
 

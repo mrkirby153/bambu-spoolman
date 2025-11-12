@@ -140,10 +140,10 @@ class AutomaticSpoolSwitch:
         logger.debug("Locked tray {}: {}", tray_id, spool_id)
 
         # Set active tray in Spoolman
-        # tray_id is calculated as: ams_id * 4 + tray_slot_id (0-indexed)
+        # tray_id is calculated as: ams_id * 4 + tray_slot_id (both 0-indexed internally)
         # So we need to reverse it to get ams_id and tray_slot_id
-        # AMS is 0-indexed, but tray should be 1-indexed (1-4)
-        ams_id = tray_id // 4
+        # Both AMS and tray should be 1-indexed for display (1-4)
+        ams_id = (tray_id // 4) + 1
         tray_slot_id = (tray_id % 4) + 1
         active_tray_id = f"ams_{ams_id}_tray_{tray_slot_id}"
 
