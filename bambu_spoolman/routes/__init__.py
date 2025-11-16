@@ -77,7 +77,7 @@ def update_tray(tray_id):
         # Clear the tray field in Spoolman for the old spool
         if old_spool_id is not None:
             try:
-                g.spoolman.set_active_tray(old_spool_id, "")
+                g.spoolman.set_active_tray(old_spool_id, None)
             except Exception as e:
                 print(f"Failed to clear tray field for spool {old_spool_id}: {e}")
     else:
@@ -109,7 +109,7 @@ def update_tray(tray_id):
         # Clear the tray field for the old spool if it was different
         if old_spool_id is not None and old_spool_id != spool_id:
             try:
-                g.spoolman.set_active_tray(old_spool_id, "")
+                g.spoolman.set_active_tray(old_spool_id, None)
             except Exception as e:
                 print(f"Failed to clear tray field for old spool {old_spool_id}: {e}")
 

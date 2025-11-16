@@ -22,6 +22,7 @@ class AutomaticSpoolSwitch:
     def __init__(self):
         self.spoolman_client = new_client()
         self.tray_mapping = None
+        self.auto_create_enabled = os.environ.get("SPOOLMAN_AUTO_CREATE_SPOOLS", "false").lower() == "true"
 
     def on_message(self, _mqtt_handler, message):
         print_obj = message.get("print", {})
@@ -54,7 +55,6 @@ class AutomaticSpoolSwitch:
         logger.debug("Initial sync")
         ams = print_obj["ams"]
         ams_data = ams.get("ams", [])
-        auto_create_enabled = os.environ.get("SPOOLMAN_AUTO_CREATE_SPOOLS", "false").lower() == "true"
 
         for data in ams_data:
             for tray in data.get("tray", []):
@@ -70,27 +70,14 @@ class AutomaticSpoolSwitch:
                         self._lock_spool(tray_id, spool_id)
                     else:
                         logger.debug("Spool {} not found", tray_uuid)
-                        # Try to auto-create if enabled and tray_uuid is valid (not empty/unknown)
-                        if auto_create_enabled and tray_uuid and tray_uuid != UNKNOWN_TRAY:
-                            logger.info("Auto-creating spool for tray_uuid: {}", tray_uuid)
-                            spool = self.spoolman_client.auto_create_spool_from_tray(tray)
-                            if spool is not None:
-                                spool_id = spool["id"]
-                                logger.info("Auto-created spool {}", spool_id)
-                                self._lock_spool(tray_id, spool_id)
-                            else:
-                                logger.error("Failed to auto-create spool")
-                                self._unlock_tray(tray_id, clear=False)
-                        else:
-                            self._unlock_tray(tray_id, clear=False)
+                        self._handle_missing_spool(tray_id, tray_uuid, tray)
                 self.tray_mapping[tray_id] = tray_uuid
 
     def _sync(self, print_obj):
         prev_tray_mapping = self.tray_mapping.copy()
         ams = print_obj["ams"]
         ams_data = ams.get("ams", [])
-        auto_create_enabled = os.environ.get("SPOOLMAN_AUTO_CREATE_SPOOLS", "false").lower() == "true"
-
+        
         for data in ams_data:
             for tray in data.get("tray", []):
                 tray_id = int(data["id"]) * 4 + int(tray["id"])
@@ -115,18 +102,28 @@ class AutomaticSpoolSwitch:
                             self._lock_spool(tray_id, spool_id)
                         else:
                             logger.debug("Spool {} not found", tray_uuid)
-                            # Try to auto-create if enabled and tray_uuid is valid (not empty/unknown)
-                            if auto_create_enabled and tray_uuid and tray_uuid != UNKNOWN_TRAY:
-                                logger.info("Auto-creating spool for tray_uuid: {}", tray_uuid)
-                                spool = self.spoolman_client.auto_create_spool_from_tray(tray)
-                                if spool is not None:
-                                    spool_id = spool["id"]
-                                    logger.info("Auto-created spool {}", spool_id)
-                                    self._lock_spool(tray_id, spool_id)
-                                else:
-                                    logger.error("Failed to auto-create spool")
+                            self._handle_missing_spool(tray_id, tray_uuid, tray)
 
                 self.tray_mapping[tray_id] = tray_uuid
+
+    def _handle_missing_spool(self, tray_id, tray_uuid, tray):
+        """
+        Handles the case when a spool is not found in Spoolman.
+        Attempts to auto-create if enabled, otherwise unlocks the tray.
+        """
+        # Try to auto-create if enabled and tray_uuid is valid (not empty/unknown)
+        if self.auto_create_enabled and tray_uuid and tray_uuid != UNKNOWN_TRAY:
+            logger.info("Auto-creating spool for tray_uuid: {}", tray_uuid)
+            spool = self.spoolman_client.auto_create_spool_from_tray(tray)
+            if spool is not None:
+                spool_id = spool["id"]
+                logger.info("Auto-created spool {}", spool_id)
+                self._lock_spool(tray_id, spool_id)
+            else:
+                logger.error("Failed to auto-create spool")
+                self._unlock_tray(tray_id, clear=False)
+        else:
+            self._unlock_tray(tray_id, clear=False)
 
     def _lock_spool(self, tray_id, spool_id):
         settings = load_settings()
@@ -180,7 +177,7 @@ class AutomaticSpoolSwitch:
         # Clear the tray field in Spoolman if we're clearing the local mapping
         if clear and spool_id is not None:
             try:
-                self.spoolman_client.set_active_tray(spool_id, "")
+                self.spoolman_client.set_active_tray(spool_id, None)
                 logger.info("Cleared tray field for spool {}", spool_id)
             except Exception as e:
                 logger.error("Failed to clear tray field for spool {}: {}", spool_id, e)
