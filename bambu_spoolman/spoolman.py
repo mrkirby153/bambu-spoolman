@@ -360,17 +360,33 @@ class SpoolmanClient:
             # Otherwise fall back to external filament's material
             material = tray_material if tray_material else external_filament.get("material", "PLA")
 
+            # Handle multi-color filaments
+            # External filaments can have either color_hex (single) or color_hexes (multiple)
+            color_hex = external_filament.get("color_hex")
+            color_hexes = external_filament.get("color_hexes")
+
             filament_data = {
                 "name": external_filament.get("name", "Unknown"),
                 "material": material,
                 "vendor_id": vendor["id"],
-                "color_hex": external_filament.get("color_hex", "000000"),
                 "diameter": external_filament.get("diameter", 1.75),
                 "weight": external_filament.get("weight", 1000),
                 "density": external_filament.get("density", 1.24),
                 "spool_weight": external_filament.get("spool_weight", 250),
                 "external_id": external_filament.get("id"),
             }
+
+            # Set color fields based on what's available
+            if color_hexes:
+                # Multi-color filament
+                filament_data["multi_color_hexes"] = ",".join(color_hexes)
+                filament_data["multi_color_direction"] = external_filament.get("multi_color_direction", "coaxial")
+            elif color_hex:
+                # Single color filament
+                filament_data["color_hex"] = color_hex
+            else:
+                # Default to black if no color specified
+                filament_data["color_hex"] = "000000"
 
             response = requests.post(
                 self._make_api_route("filament"),
@@ -381,6 +397,9 @@ class SpoolmanClient:
 
             logger.info(f"Created filament from external: {filament_data['name']}")
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error creating filament from external: status={e.response.status_code}, response={e.response.text}")
+            return None
         except Exception as e:
             logger.error(f"Exception creating filament from external: {e}")
             return None
