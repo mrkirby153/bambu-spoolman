@@ -16,6 +16,8 @@ class SpoolmanClient:
         self.verify = os.environ.get("SPOOLMAN_VERIFY", "true").lower() == "true"
         self._external_filaments_cache = None
         self._external_filaments_cache_time = None
+        self.ams_field_name = os.environ.get("SPOOLMAN_AMS_FIELD_NAME")
+        self.tray_field_name = os.environ.get("SPOOLMAN_TRAY_FIELD_NAME")
 
         if not self.verify:
             urllib3.disable_warnings()
@@ -170,11 +172,8 @@ class SpoolmanClient:
 
         Returns False if neither environment variable is set
         """
-        ams_field_name = os.environ.get("SPOOLMAN_AMS_FIELD_NAME")
-        tray_field_name = os.environ.get("SPOOLMAN_TRAY_FIELD_NAME")
-
         # Skip if neither environment variable is set
-        if ams_field_name is None and tray_field_name is None:
+        if self.ams_field_name is None and self.tray_field_name is None:
             logger.debug("Neither SPOOLMAN_AMS_FIELD_NAME nor SPOOLMAN_TRAY_FIELD_NAME set, skipping tray field update")
             return False
 
@@ -187,18 +186,18 @@ class SpoolmanClient:
         extra = existing_spool.get("extra", {})
 
         # Set or clear the AMS field
-        if ams_field_name:
+        if self.ams_field_name:
             if ams_num is not None:
-                extra[ams_field_name] = f"\"{ams_num}\""
+                extra[self.ams_field_name] = f"\"{ams_num}\""
             else:
-                extra[ams_field_name] = f"\"\""
+                extra[self.ams_field_name] = f"\"\""
 
         # Set or clear the tray field
-        if tray_field_name:
+        if self.tray_field_name:
             if tray_num is not None:
-                extra[tray_field_name] = f"\"{tray_num}\""
+                extra[self.tray_field_name] = f"\"{tray_num}\""
             else:
-                extra[tray_field_name] = f"\"\""
+                extra[self.tray_field_name] = f"\"\""
 
         # Update the spool
         try:
