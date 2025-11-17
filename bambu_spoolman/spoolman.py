@@ -86,12 +86,14 @@ class SpoolmanClient:
         """
         Get a specific spool by ID
         """
-        response = requests.get(
-            self._make_api_route(f"spool/{spool_id}"), verify=self.verify
-        )
-        if response.status_code != 200:
+        try:
+            response = requests.get(
+                self._make_api_route(f"spool/{spool_id}"), verify=self.verify
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError:
             return None
-        return response.json()
 
     def consume_spool(self, spool_id, *, length=None, weight=None):
         """
@@ -142,12 +144,16 @@ class SpoolmanClient:
         # Set the new tray uuid
         extra[extra_field] = f"\"{tray_uuid}\""
         # Update the spool
-        response = requests.patch(
-            self._make_api_route(f"spool/{spool_id}"),
-            json={"extra": extra},
-            verify=self.verify,
-        )
-        return True if response.status_code == 200 else False
+        try:
+            response = requests.patch(
+                self._make_api_route(f"spool/{spool_id}"),
+                json={"extra": extra},
+                verify=self.verify,
+            )
+            response.raise_for_status()
+            return True
+        except requests.exceptions.HTTPError:
+            return False
 
     def set_active_tray(self, spool_id, ams_num=None, tray_num=None):
         """
@@ -195,17 +201,17 @@ class SpoolmanClient:
                 extra[tray_field_name] = f"\"\""
 
         # Update the spool
-        response = requests.patch(
-            self._make_api_route(f"spool/{spool_id}"),
-            json={"extra": extra},
-            verify=self.verify,
-        )
-
-        if response.status_code == 200:
+        try:
+            response = requests.patch(
+                self._make_api_route(f"spool/{spool_id}"),
+                json={"extra": extra},
+                verify=self.verify,
+            )
+            response.raise_for_status()
             logger.debug(f"Set AMS/tray fields for spool {spool_id}: AMS={ams_num}, Tray={tray_num}")
             return True
-        else:
-            logger.error(f"Failed to set AMS/tray fields for spool {spool_id}: status={response.status_code}")
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Failed to set AMS/tray fields for spool {spool_id}: status={e.response.status_code}, response={e.response.text}")
             return False
 
     def create_spool(self, filament_id, tray_uuid, initial_weight=1000):
@@ -457,11 +463,11 @@ class SpoolmanClient:
         try:
             # Try to find existing vendor
             response = requests.get(self._make_api_route("vendor"), verify=self.verify)
-            if response.status_code == 200:
-                vendors = response.json()
-                for vendor in vendors:
-                    if vendor.get("name") == vendor_name:
-                        return vendor
+            response.raise_for_status()
+            vendors = response.json()
+            for vendor in vendors:
+                if vendor.get("name") == vendor_name:
+                    return vendor
 
             # Vendor not found, create it
             vendor_data = {
