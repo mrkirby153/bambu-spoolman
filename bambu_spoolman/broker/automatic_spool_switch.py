@@ -140,15 +140,14 @@ class AutomaticSpoolSwitch:
         # tray_id is calculated as: ams_id * 4 + tray_slot_id (both 0-indexed internally)
         # So we need to reverse it to get ams_id and tray_slot_id
         # Both AMS and tray should be 1-indexed for display (1-4)
-        ams_id = (tray_id // 4) + 1
-        tray_slot_id = (tray_id % 4) + 1
-        active_tray_id = f"ams_{ams_id}_tray_{tray_slot_id}"
+        ams_num = (tray_id // 4) + 1
+        tray_num = (tray_id % 4) + 1
 
         try:
-            self.spoolman_client.set_active_tray(spool_id, active_tray_id)
-            logger.info("Set tray field for spool {} to {}", spool_id, active_tray_id)
+            self.spoolman_client.set_active_tray(spool_id, ams_num, tray_num)
+            logger.info("Set tray fields for spool {}: AMS={}, Tray={}", spool_id, ams_num, tray_num)
         except Exception as e:
-            logger.error("Failed to set tray field for spool {}: {}", spool_id, e)
+            logger.error("Failed to set tray fields for spool {}: {}", spool_id, e)
 
     def _unlock_tray(self, tray_id, clear=False):
         settings = load_settings()
@@ -174,10 +173,10 @@ class AutomaticSpoolSwitch:
         save_settings(settings)
         logger.debug("Unlocked tray {}: {}", tray_id, locked)
 
-        # Clear the tray field in Spoolman if we're clearing the local mapping
+        # Clear the tray fields in Spoolman if we're clearing the local mapping
         if clear and spool_id is not None:
             try:
-                self.spoolman_client.set_active_tray(spool_id, None)
-                logger.info("Cleared tray field for spool {}", spool_id)
+                self.spoolman_client.set_active_tray(spool_id, None, None)
+                logger.info("Cleared tray fields for spool {}", spool_id)
             except Exception as e:
-                logger.error("Failed to clear tray field for spool {}: {}", spool_id, e)
+                logger.error("Failed to clear tray fields for spool {}: {}", spool_id, e)

@@ -149,35 +149,50 @@ class SpoolmanClient:
         )
         return True if response.status_code == 200 else False
 
-    def set_active_tray(self, spool_id, active_tray_id):
+    def set_active_tray(self, spool_id, ams_num=None, tray_num=None):
         """
-        Sets the tray field for a spool
-        active_tray_id should be in format: ams_{ams_id}_tray_{tray_id}
-        Pass None to clear the tray field
-        Uses SPOOLMAN_TRAY_FIELD_NAME environment variable
-        Returns False if SPOOLMAN_TRAY_FIELD_NAME is not set
+        Sets the AMS and tray fields for a spool
+
+        Args:
+            spool_id: The spool ID to update
+            ams_num: The AMS number (1-indexed), or None to clear
+            tray_num: The tray number (1-indexed), or None to clear
+
+        Uses environment variables:
+            SPOOLMAN_AMS_FIELD_NAME: Field name for AMS number (e.g., "ams_num")
+            SPOOLMAN_TRAY_FIELD_NAME: Field name for tray number (e.g., "ams_tray")
+
+        Returns False if neither environment variable is set
         """
+        ams_field_name = os.environ.get("SPOOLMAN_AMS_FIELD_NAME")
         tray_field_name = os.environ.get("SPOOLMAN_TRAY_FIELD_NAME")
 
-        # Skip if the environment variable is not set
-        if tray_field_name is None:
-            logger.debug("SPOOLMAN_TRAY_FIELD_NAME not set, skipping tray field update")
+        # Skip if neither environment variable is set
+        if ams_field_name is None and tray_field_name is None:
+            logger.debug("Neither SPOOLMAN_AMS_FIELD_NAME nor SPOOLMAN_TRAY_FIELD_NAME set, skipping tray field update")
             return False
 
         existing_spool = self.get_spool(spool_id)
         if existing_spool is None:
-            logger.warning(f"Spool {spool_id} not found, cannot set {tray_field_name}")
+            logger.warning(f"Spool {spool_id} not found, cannot set tray fields")
             return False
 
         # Get extra data
         extra = existing_spool.get("extra", {})
 
+        # Set or clear the AMS field
+        if ams_field_name:
+            if ams_num is not None:
+                extra[ams_field_name] = f"\"{ams_num}\""
+            else:
+                extra[ams_field_name] = f"\"\""
+
         # Set or clear the tray field
-        if active_tray_id is not None:  
-            extra[tray_field_name] = f"\"{active_tray_id}\""
-        else:
-            # Clear by setting to empty string
-            extra[tray_field_name] = None
+        if tray_field_name:
+            if tray_num is not None:
+                extra[tray_field_name] = f"\"{tray_num}\""
+            else:
+                extra[tray_field_name] = f"\"\""
 
         # Update the spool
         response = requests.patch(
@@ -187,10 +202,10 @@ class SpoolmanClient:
         )
 
         if response.status_code == 200:
-            logger.debug(f"Set {tray_field_name} for spool {spool_id} to: {active_tray_id}")
+            logger.debug(f"Set AMS/tray fields for spool {spool_id}: AMS={ams_num}, Tray={tray_num}")
             return True
         else:
-            logger.error(f"Failed to set {tray_field_name} for spool {spool_id}: {response.status_code}")
+            logger.error(f"Failed to set AMS/tray fields for spool {spool_id}: status={response.status_code}")
             return False
 
     def create_spool(self, filament_id, tray_uuid, initial_weight=1000):
