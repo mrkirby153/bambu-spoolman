@@ -259,10 +259,16 @@ class SpoolmanClient:
 
         filament_type = tray_data.get("tray_type", "")
         filament_sub_brand = tray_data.get("tray_sub_brands", "")
-        tray_color = tray_data.get("tray_color", "")
 
-        # Clean up color hex (first 6 chars, uppercase)
-        color_hex = tray_color[:6].upper() if tray_color else ""
+        # Extract colors from cols array (supports multi-color filaments)
+        cols = tray_data.get("cols", [])
+        if cols:
+            # Use cols array if available
+            color_hexes = [col[:6].upper() for col in cols]
+        else:
+            # Fall back to tray_color for backwards compatibility
+            tray_color = tray_data.get("tray_color", "")
+            color_hexes = [tray_color[:6].upper()] if tray_color else []
 
         # Step 1: Filter by Bambu Lab manufacturer/vendor
         bambu_filaments = []
@@ -283,15 +289,24 @@ class SpoolmanClient:
             logger.debug("No Bambu Lab filaments found in external database")
             return None
 
-        # Step 2: Filter by color
+        # Step 2: Filter by color (using intersection - any color match)
         color_matched = []
         for filament in bambu_filaments:
-            filament_color_hex = filament.get("color_hex", "")
-            if filament_color_hex == color_hex:
+            # Handle both color_hex (single) and color_hexes (multiple)
+            filament_colors = filament.get("color_hex") or filament.get("color_hexes")
+
+            # Convert to list if single value
+            if isinstance(filament_colors, str):
+                filament_colors = [filament_colors]
+            elif filament_colors is None:
+                filament_colors = []
+
+            # Check if any color from tray matches any color from filament (intersection)
+            if any(color in filament_colors for color in color_hexes):
                 color_matched.append(filament)
 
         if not color_matched:
-            logger.debug(f"No color match found for {color_hex}")
+            logger.debug(f"No color match found for {color_hexes}")
             return None
 
         # Step 3: Try to match by sub_brand/specific name (e.g., "PETG HF")
