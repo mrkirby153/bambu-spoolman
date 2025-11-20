@@ -90,7 +90,7 @@ class MqttHandler(threading.Thread):
 
         super().__init__()
         self.daemon = True
-        self.setName(f"MqttHandler-{printer_serial}")
+        self.name = f"MqttHandler-{printer_serial}"
 
     def run(self):
         last_error = None

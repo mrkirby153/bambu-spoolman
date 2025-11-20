@@ -3,6 +3,7 @@ import os
 import ssl
 import tempfile
 
+from pathlib import Path
 from loguru import logger
 
 
@@ -23,6 +24,13 @@ class ImplicitFTP_TLS(ftplib.FTP_TLS):
             value = self.context.wrap_socket(value)
         self._sock = value
 
+    def ntransfercmd(self, cmd, rest=None):
+        """Override the ntransfercmd method"""
+        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
+        conn = self.sock.context.wrap_socket(
+            conn, server_hostname=self.host, session=self.sock.session
+        )
+        return conn, size
 
 def retrieve_3mf(filename):
     logger.debug("Retrieving cached 3mf file {}", filename)

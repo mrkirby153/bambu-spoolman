@@ -116,13 +116,20 @@ class FilamentUsageTracker:
     def _retrieve_model(self, model_url):
         logger.debug("Loading model from URL: {}", model_url)
 
+        ftp_uris = (
+            "file",
+            "ftp",
+            "brtc"
+        )
+
         # Turn URL into a URI
         uri = urlparse(model_url)
 
         if uri.scheme == "https" or uri.scheme == "http":
             return self._download_model(model_url)
-        elif uri.scheme == "file":
-            return self._retrieve_model_from_ftp(uri.path)
+        elif uri.scheme in ftp_uris:
+            path = f"{uri.netloc}{uri.path}"
+            return self._retrieve_model_from_ftp(path)
         else:
             logger.warning("Unsupported model URL: {}", model_url)
             return None
@@ -221,9 +228,16 @@ class FilamentUsageTracker:
     def _retrieve_model_from_ftp(self, model_path):
         logger.debug("Retrieving model from FTP path: {}", model_path)
 
-        # Remove the /sdcard/ prefix
-        if model_path.startswith("/sdcard/"):
-            model_path = model_path[8:]
+        mount_prefixes = (
+            "/sdcard/",
+            "/media/usb0/"
+        )
+
+        # Remove fs mount prefixes
+        for p in mount_prefixes:
+            if model_path.startswith(p):
+                model_path = model_path.removeprefix(p)
+                break
 
         # Retrieve from FTP server
         return retrieve_3mf(model_path)
