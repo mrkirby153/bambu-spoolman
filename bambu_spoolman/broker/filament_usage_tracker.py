@@ -87,7 +87,7 @@ class FilamentUsageTracker:
 
         self.ams_mapping = print_obj.get("ams_mapping", [])
         if print_obj.get("use_ams", False) \
-            or (len(self.ams_mapping) == 1 and self.ams_mapping[0] not in (-1, 255)):
+            or (self.ams_mapping and self.ams_mapping[0] not in (-1, 255)):
             logger.info("Using AMS")
             self.using_ams = True
             logger.info("AMS mapping: {}", self.ams_mapping)
