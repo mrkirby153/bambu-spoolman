@@ -1,4 +1,5 @@
 from flask import Blueprint, g, request
+from loguru import logger
 
 from bambu_spoolman.broker.commands import (
     get_printer_status,
@@ -54,7 +55,7 @@ def update_tray(tray_id):
     trays = settings.get("trays", {})
 
     locked_trays = settings.get("locked_trays", [])
-    print(f"Locked trays: {locked_trays}")
+    logger.debug(f"Locked trays: {locked_trays}")
     if int(tray_id) in locked_trays:
         return {
             "status": "error",
@@ -79,7 +80,7 @@ def update_tray(tray_id):
             try:
                 g.spoolman.set_active_tray(old_spool_id, None, None)
             except Exception as e:
-                print(f"Failed to clear tray fields for spool {old_spool_id}: {e}")
+                logger.error(f"Failed to clear tray fields for spool {old_spool_id}: {e}")
     else:
         spool_id = int(spool_id)
         spool = g.spoolman.get_spool(spool_id)
@@ -103,14 +104,14 @@ def update_tray(tray_id):
         try:
             g.spoolman.set_active_tray(spool_id, ams_num, tray_num)
         except Exception as e:
-            print(f"Failed to set tray fields for spool {spool_id}: {e}")
+            logger.error(f"Failed to set tray fields for spool {spool_id}: {e}")
 
         # Clear the tray fields for the old spool if it was different
         if old_spool_id is not None and old_spool_id != spool_id:
             try:
                 g.spoolman.set_active_tray(old_spool_id, None, None)
             except Exception as e:
-                print(f"Failed to clear tray fields for old spool {old_spool_id}: {e}")
+                logger.error(f"Failed to clear tray fields for old spool {old_spool_id}: {e}")
 
     settings["trays"] = trays
     save_settings(settings)
@@ -148,7 +149,7 @@ def tray_update(spool_id):
 
     spool = g.spoolman.get_spool(spool_id)
 
-    print("spool", spool)
+    logger.debug(f"spool: {spool}")
 
     if spool is None:
         return {"status": "error", "message": "Spool not found"}, 404
