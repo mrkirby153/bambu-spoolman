@@ -25,6 +25,9 @@ Set the following environment variables:
 * `PRINTER_SERIAL` -- The serial number of your printer
 * `PRINTER_ACCESS_CODE` -- The access code for your printer
 * `BAMBU_SPOOLMAN_CONFIG` -- A directory to store the configuration file
+* `SPOOLMAN_AUTO_CREATE_SPOOLS` -- Create spools when detected
+* `SPOOLMAN_AMS_FIELD_NAME` -- Spoolman field to store which AMS a spool is in
+* `SPOOLMAN_AMS_TRAY_NAME` -- Spoolman field to store which tray a spool is in
 
 ## Usage
 
