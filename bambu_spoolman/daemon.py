@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import os
-import time
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -10,7 +9,6 @@ from bambu_spoolman.bambu_mqtt import MqttHandler, stateful_printer_info
 from bambu_spoolman.broker.automatic_spool_switch import AutomaticSpoolSwitch
 from bambu_spoolman.broker.filament_usage_tracker import FilamentUsageTracker
 from bambu_spoolman.broker.server import run_server
-from bambu_spoolman.spoolman import new_client
 
 async def async_main():
     loop = asyncio.get_event_loop()
