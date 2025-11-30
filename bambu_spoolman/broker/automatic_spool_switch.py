@@ -1,3 +1,5 @@
+import os
+
 from loguru import logger
 
 from bambu_spoolman.bambu_mqtt import stateful_printer_info
@@ -20,6 +22,7 @@ class AutomaticSpoolSwitch:
     def __init__(self):
         self.spoolman_client = new_client()
         self.tray_mapping = None
+        self.auto_create_enabled = os.environ.get("SPOOLMAN_AUTO_CREATE_SPOOLS", "false").lower() == "true"
 
     def on_message(self, _mqtt_handler, message):
         print_obj = message.get("print", {})
@@ -67,14 +70,14 @@ class AutomaticSpoolSwitch:
                         self._lock_spool(tray_id, spool_id)
                     else:
                         logger.debug("Spool {} not found", tray_uuid)
-                        self._unlock_tray(tray_id, clear=False)
+                        self._handle_missing_spool(tray_id, tray_uuid, tray)
                 self.tray_mapping[tray_id] = tray_uuid
 
     def _sync(self, print_obj):
         prev_tray_mapping = self.tray_mapping.copy()
         ams = print_obj["ams"]
         ams_data = ams.get("ams", [])
-
+        
         for data in ams_data:
             for tray in data.get("tray", []):
                 tray_id = int(data["id"]) * 4 + int(tray["id"])
@@ -99,8 +102,28 @@ class AutomaticSpoolSwitch:
                             self._lock_spool(tray_id, spool_id)
                         else:
                             logger.debug("Spool {} not found", tray_uuid)
+                            self._handle_missing_spool(tray_id, tray_uuid, tray)
 
                 self.tray_mapping[tray_id] = tray_uuid
+
+    def _handle_missing_spool(self, tray_id, tray_uuid, tray):
+        """
+        Handles the case when a spool is not found in Spoolman.
+        Attempts to auto-create if enabled, otherwise unlocks the tray.
+        """
+        # Try to auto-create if enabled and tray_uuid is valid (not empty/unknown)
+        if self.auto_create_enabled and tray_uuid and tray_uuid != UNKNOWN_TRAY:
+            logger.info("Auto-creating spool for tray_uuid: {}", tray_uuid)
+            spool = self.spoolman_client.auto_create_spool_from_tray(tray)
+            if spool is not None:
+                spool_id = spool["id"]
+                logger.info("Auto-created spool {}", spool_id)
+                self._lock_spool(tray_id, spool_id)
+            else:
+                logger.error("Failed to auto-create spool")
+                self._unlock_tray(tray_id, clear=False)
+        else:
+            self._unlock_tray(tray_id, clear=False)
 
     def _lock_spool(self, tray_id, spool_id):
         settings = load_settings()
@@ -113,19 +136,47 @@ class AutomaticSpoolSwitch:
         save_settings(settings)
         logger.debug("Locked tray {}: {}", tray_id, spool_id)
 
+        # Set active tray in Spoolman
+        # tray_id is calculated as: ams_id * 4 + tray_slot_id (both 0-indexed internally)
+        # So we need to reverse it to get ams_id and tray_slot_id
+        # Both AMS and tray should be 1-indexed for display (1-4)
+        ams_num = (tray_id // 4) + 1
+        tray_num = (tray_id % 4) + 1
+
+        try:
+            self.spoolman_client.set_active_tray(spool_id, ams_num, tray_num)
+            logger.info("Set tray fields for spool {}: AMS={}, Tray={}", spool_id, ams_num, tray_num)
+        except Exception as e:
+            logger.error("Failed to set tray fields for spool {}: {}", spool_id, e)
+
     def _unlock_tray(self, tray_id, clear=False):
         settings = load_settings()
         locked = settings.get("locked_trays", [])
-        if tray_id not in locked:
-            return
-        locked.remove(tray_id)
+        trays = settings.get("trays", {})
 
+        # Get the spool_id before clearing (works for both locked and manually assigned)
+        spool_id = trays.get(str(tray_id)) or trays.get(tray_id)
+
+        # Remove from locked list if present
+        if tray_id in locked:
+            locked.remove(tray_id)
+            settings["locked_trays"] = locked
+
+        # Clear the tray assignment if requested
         if clear:
-            trays = settings.get("trays", {})
+            if str(tray_id) in trays:
+                del trays[str(tray_id)]
             if tray_id in trays:
                 del trays[tray_id]
-                settings["trays"] = trays
+            settings["trays"] = trays
 
-        settings["locked_trays"] = locked
         save_settings(settings)
         logger.debug("Unlocked tray {}: {}", tray_id, locked)
+
+        # Clear the tray fields in Spoolman if we're clearing the local mapping
+        if clear and spool_id is not None:
+            try:
+                self.spoolman_client.set_active_tray(spool_id, None, None)
+                logger.info("Cleared tray fields for spool {}", spool_id)
+            except Exception as e:
+                logger.error("Failed to clear tray fields for spool {}: {}", spool_id, e)

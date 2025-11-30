@@ -1,4 +1,5 @@
 from flask import Blueprint, g, request
+from loguru import logger
 
 from bambu_spoolman.broker.commands import (
     get_printer_status,
@@ -54,18 +55,32 @@ def update_tray(tray_id):
     trays = settings.get("trays", {})
 
     locked_trays = settings.get("locked_trays", [])
-    print(f"Locked trays: {locked_trays}")
+    logger.debug(f"Locked trays: {locked_trays}")
     if int(tray_id) in locked_trays:
         return {
             "status": "error",
             "message": "Tray is locked and cannot be changed",
         }, 400
 
+    tray_id_int = int(tray_id)
     spool_id = data.get("spool_id")
+
+    # Get the old spool_id if there was one, so we can clear its tray field
+    # Try both string and int keys for compatibility
+    old_spool_id = trays.get(tray_id) or trays.get(tray_id_int)
+
     if spool_id is None:
+        # Clearing the tray assignment
         if tray_id in trays:
             del trays[tray_id]
             settings["trays"] = trays
+
+        # Clear the tray fields in Spoolman for the old spool
+        if old_spool_id is not None:
+            try:
+                g.spoolman.set_active_tray(old_spool_id, None, None)
+            except Exception as e:
+                logger.error(f"Failed to clear tray fields for spool {old_spool_id}: {e}")
     else:
         spool_id = int(spool_id)
         spool = g.spoolman.get_spool(spool_id)
@@ -80,6 +95,24 @@ def update_tray(tray_id):
                 }, 400
 
         trays[tray_id] = spool_id
+
+        # Set the tray fields in Spoolman for the new spool
+        # Calculate AMS and tray slot (both 1-indexed for display)
+        ams_num = (tray_id_int // 4) + 1
+        tray_num = (tray_id_int % 4) + 1
+
+        try:
+            g.spoolman.set_active_tray(spool_id, ams_num, tray_num)
+        except Exception as e:
+            logger.error(f"Failed to set tray fields for spool {spool_id}: {e}")
+
+        # Clear the tray fields for the old spool if it was different
+        if old_spool_id is not None and old_spool_id != spool_id:
+            try:
+                g.spoolman.set_active_tray(old_spool_id, None, None)
+            except Exception as e:
+                logger.error(f"Failed to clear tray fields for old spool {old_spool_id}: {e}")
+
     settings["trays"] = trays
     save_settings(settings)
 
@@ -116,7 +149,7 @@ def tray_update(spool_id):
 
     spool = g.spoolman.get_spool(spool_id)
 
-    print("spool", spool)
+    logger.debug(f"spool: {spool}")
 
     if spool is None:
         return {"status": "error", "message": "Spool not found"}, 404
