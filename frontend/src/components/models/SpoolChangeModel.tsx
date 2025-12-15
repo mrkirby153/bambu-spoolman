@@ -122,6 +122,21 @@ function QrCodeButton() {
   );
 }
 
+function QrCodeButtonWrapper() {
+  // Prerequisites for showing the QR code scanner button
+  // window.isSecureContext must be true (HTTPS or localhost)
+  // navigator.mediaDevices must be available
+  const mediaDevicesAvailable =
+    navigator.mediaDevices !== undefined &&
+    navigator.mediaDevices.enumerateDevices !== undefined;
+  const canShowQRCode = window.isSecureContext && mediaDevicesAvailable;
+
+  if (!canShowQRCode) {
+    return null;
+  }
+  return <QrCodeButton />;
+}
+
 const urlRegex = /https?:\/\/.*\/(\d+)/;
 const spoolmanRegex = /web\+spoolman:s-(\d+)/;
 
@@ -214,7 +229,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           type="number"
           className="border border-gray-300 p-1 rounded"
           placeholder="Spool ID"
-          value={spoolId?.toString()}
+          value={spoolId?.toString() || ""}
           onChange={onSpoolIdChange}
           disabled={props.locked}
         />
@@ -228,7 +243,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
         </>
       )}
 
-      <QrCodeButton />
+      <QrCodeButtonWrapper />
 
       {scanning ? (
         <QrCodeScanner />
