@@ -85,9 +85,10 @@ class FilamentUsageTracker:
             logger.error("Failed to retrieve model. Print will not be tracked")
             return
 
-        if print_obj.get("use_ams", False):
+        self.ams_mapping = print_obj.get("ams_mapping", [])
+        if print_obj.get("use_ams", False) \
+            or (self.ams_mapping and self.ams_mapping[0] not in (-1, 255)):
             logger.info("Using AMS")
-            self.ams_mapping = print_obj.get("ams_mapping", [])
             self.using_ams = True
             logger.info("AMS mapping: {}", self.ams_mapping)
         else:
