@@ -22,10 +22,12 @@ export default function Configuration() {
         <h2 className="text-2xl">External Spool Configuration</h2>
         <ExternalSpoolConfiguration />
       </div>
-      <div className="mt-3">
-        <h2 className="text-2xl">AMS Configuration</h2>
-        <div className="flex flex-col gap-3 md:flex-row">{amsComponents}</div>
-      </div>
+      {ams > 0 && (
+        <div className="mt-3">
+          <h2 className="text-2xl">AMS Configuration</h2>
+          <div className="flex flex-col gap-3 md:flex-row">{amsComponents}</div>
+        </div>
+      )}
     </>
   );
 }
