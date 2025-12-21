@@ -29,7 +29,14 @@ def _save_checkpoint_metadata(metadata):
 
 
 def save_checkpoint(
-    *, model_path, current_layer, task_id, subtask_id, ams_mapping, gcode_file_name
+    *,
+    model_path,
+    current_layer,
+    task_id,
+    subtask_id,
+    ams_mapping,
+    gcode_file_name,
+    using_ams,
 ):
     shutil.copy(model_path, os.path.join(checkpoint_directory(), "model.3mf"))
 
@@ -39,6 +46,7 @@ def save_checkpoint(
     existing_metadata["current_layer"] = current_layer
     existing_metadata["ams_mapping"] = ams_mapping
     existing_metadata["gcode_file_name"] = gcode_file_name
+    existing_metadata["using_ams"] = using_ams
     _save_checkpoint_metadata(existing_metadata)
 
 
@@ -85,9 +93,15 @@ def recover_model(task_id, subtask_id):
     current_layer = metadata.get("current_layer")
     ams_mapping = metadata.get("ams_mapping")
     gcode_file_name = metadata.get("gcode_file_name")
+    using_ams = metadata.get("using_ams")
+
+    if using_ams is None:
+        # This is an old checkpoint, we can guess whether AMS was used based on
+        # the mapping.
+        using_ams = bool(ams_mapping and ams_mapping[0] not in (-1, 255))
 
     if current_layer is None or gcode_file_name is None:
         logger.error("Checkpoint metadata is incomplete")
         return None
 
-    return model_path, gcode_file_name, current_layer, ams_mapping
+    return model_path, gcode_file_name, current_layer, ams_mapping, using_ams

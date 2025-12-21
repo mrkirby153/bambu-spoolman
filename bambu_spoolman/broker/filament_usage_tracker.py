@@ -62,6 +62,13 @@ class FilamentUsageTracker:
                 self._handle_print_end()
 
             if (
+                self.gcode_state == "FAILURE"
+                and previous_gcode_state != "FAILURE"
+                and self.active_model is not None
+            ):
+                self._handle_print_failure()
+
+            if (
                 self.gcode_state == "RUNNING"
                 and previous_gcode_state != "RUNNING"
                 and self.active_model is None
@@ -85,15 +92,18 @@ class FilamentUsageTracker:
             logger.error("Failed to retrieve model. Print will not be tracked")
             return
 
-        self.ams_mapping = print_obj.get("ams_mapping", [])
-        if print_obj.get("use_ams", False) \
-            or (self.ams_mapping and self.ams_mapping[0] not in (-1, 255)):
+        ams_mapping = print_obj.get("ams_mapping", [])
+        if print_obj.get("use_ams", False) or (
+            ams_mapping and ams_mapping[0] not in (-1, 255)
+        ):
             logger.info("Using AMS")
             self.using_ams = True
+            self.ams_mapping = ams_mapping
             logger.info("AMS mapping: {}", self.ams_mapping)
         else:
             logger.info("Not using AMS")
             self.using_ams = False
+            self.ams_mapping = None  # Ensure this is cleared out
 
         gcode_file_name = print_obj.get("param")
 
@@ -106,6 +116,7 @@ class FilamentUsageTracker:
             subtask_id=print_obj.get("subtask_id"),
             ams_mapping=self.ams_mapping,
             gcode_file_name=gcode_file_name,
+            using_ams=self.using_ams,
         )
 
         # Delete the downloaded model
@@ -117,11 +128,7 @@ class FilamentUsageTracker:
     def _retrieve_model(self, model_url):
         logger.debug("Loading model from URL: {}", model_url)
 
-        ftp_uris = (
-            "file",
-            "ftp",
-            "brtc"
-        )
+        ftp_uris = ("file", "ftp", "brtc")
 
         # Turn URL into a URI
         uri = urlparse(model_url)
@@ -163,9 +170,22 @@ class FilamentUsageTracker:
         logger.info("Print ended!")
 
         # Spend all layers that haven't already been spent
-        for layer in set(self.active_model.keys()) - self.spent_layers:
-            logger.debug(f"Spending layer {layer} as it was not spent during the print")
-            self._handle_layer_change(layer)
+        if self.active_model is not None:
+            for layer in set(self.active_model.keys()) - self.spent_layers:
+                logger.debug(
+                    f"Spending layer {layer} as it was not spent during the print"
+                )
+                self._handle_layer_change(layer)
+
+        self.active_model = None
+        self.ams_mapping = None
+        self.using_ams = False
+        self.current_layer = None
+
+        clear_checkpoint()
+
+    def _handle_print_failure(self):
+        logger.info("Print failed!")
 
         self.active_model = None
         self.ams_mapping = None
@@ -193,7 +213,9 @@ class FilamentUsageTracker:
 
             # Use the external spool ID if we're not using an AMS
             real_mapping = (
-                self.ams_mapping[filament] if self.using_ams else EXTERNAL_SPOOL_ID
+                self.ams_mapping[filament]
+                if self.using_ams and self.ams_mapping
+                else EXTERNAL_SPOOL_ID
             )
 
             logger.debug("Real mapping for filament {} is {}", filament, real_mapping)
@@ -229,10 +251,7 @@ class FilamentUsageTracker:
     def _retrieve_model_from_ftp(self, model_path):
         logger.debug("Retrieving model from FTP path: {}", model_path)
 
-        mount_prefixes = (
-            "/sdcard/",
-            "/media/usb0/"
-        )
+        mount_prefixes = ("/sdcard/", "/media/usb0/")
 
         # Remove fs mount prefixes
         for p in mount_prefixes:
@@ -267,7 +286,7 @@ class FilamentUsageTracker:
         result = recover_model(task_id, subtask_id)
         if result is None:
             return
-        model_path, gcode_file_name, current_layer, ams_mapping = result
+        model_path, gcode_file_name, current_layer, ams_mapping, using_ams = result
 
         logger.info("Recovered model from checkpoint")
 
@@ -275,4 +294,4 @@ class FilamentUsageTracker:
         self.spent_layers = set(range(current_layer + 1))
         self.ams_mapping = ams_mapping
         self.current_layer = current_layer
-        self.using_ams = ams_mapping is not None
+        self.using_ams = using_ams
