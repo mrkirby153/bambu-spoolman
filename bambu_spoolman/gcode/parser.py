@@ -73,11 +73,16 @@ def evaluate_gcode(gcode):
 
         if operation.operation == "M620":  # Tool change
             if filament := operation.params.get("S"):
-                if filament == "255":
+                if filament == "255" or filament == "65535":
                     logger.debug("Full unload")
                     active_filament = None
                     continue
-                filament = int(filament[:-1])
+                if not filament[-1].isdigit():
+                    filament = filament[:-1]
+                filament = int(filament)
+                if filament > 65000:
+                    logger.debug(f"Ignoring bogus filament {filament}")
+                    continue
                 logger.debug(f"Filament change from {active_filament} to {filament}")
                 active_filament = filament
 
