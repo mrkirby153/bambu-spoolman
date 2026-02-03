@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package bambu_spoolman.grpc;
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "bambu_spoolman/grpc/spoolman.proto";
+
+// Service definitions for BambuSpoolman
+service BambuSpoolman {
+
+    // Gets the current number of trays
+    rpc GetTrayCount(google.protobuf.Empty) returns (TrayCountResponse);
+
+    // Forces a synchronization of trays for automatic spool switching
+    rpc ResyncTrays(google.protobuf.Empty) returns (google.protobuf.Empty);
+
+    // Gets the status of the printer
+    rpc GetPrinterStatus(google.protobuf.Empty) returns (PrinterStatusResponse);
+
+    // Retrieves current information about this instance
+    rpc Info(google.protobuf.Empty) returns (InfoResponse);
+
+    // Retrieves the following spools by their IDs. Leave blank to get all spools.
+    rpc GetSpools(GetSpoolsRequest) returns (GetSpoolsResponse);
+
+    // Get application settings
+    rpc GetSettings(google.protobuf.Empty) returns (google.protobuf.Any);
+
+    // Updates a tray
+    rpc UpdateTray(google.protobuf.Any) returns (google.protobuf.Empty);
+
+    // Gets a tray by its UUID
+    rpc GetTrayByUUID(GetTrayByUUIDRequest) returns (google.protobuf.Any);
+
+    // Sets a tray's UUID
+    rpc SetTrayUUID(SetTrayUUIDRequest) returns (google.protobuf.Empty);
+}
+
+message TrayCountResponse {
+    int64 count = 1;
+}
+
+message PrinterStatusResponse {
+    int64 last_updated = 1;
+    bool connected = 2;
+    google.protobuf.Any status = 3;
+}
+
+message InfoResponse {
+    string spoolman_url = 1;
+    bool spoolman_valid = 2;
+}
+
+message GetSpoolsRequest {
+    repeated string spool_id = 1;
+}
+
+message GetSpoolsResponse {
+    repeated Spool spools = 1;
+}
+
+message GetTrayByUUIDRequest {
+    string uuid = 1;
+}
+
+message SetTrayUUIDRequest {
+    int64 spool_id = 1;
+    string uuid = 2;
+}

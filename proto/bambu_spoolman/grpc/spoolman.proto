@@ -1,0 +1,46 @@
+syntax = "proto3";
+package bambu_spoolman.grpc;
+
+import "google/protobuf/any.proto";
+
+
+message Spool {
+    bool archived = 1;
+    google.protobuf.Any extra = 2;
+    Filament filament = 3;
+    int64 id = 4;
+    float initial_weight = 5;
+    string registered = 6;
+    float remaining_length = 7;
+    float remaining_weight = 8;
+    float spool_weight = 9;
+    float used_length = 10;
+    float used_weight = 11;
+}
+
+message Vendor {
+    string external_id = 1;
+    google.protobuf.Any extra = 2;
+    int64 id = 3;
+    string name = 4;
+    string registered = 5;
+}
+
+message Filament {
+    string color_hex = 1;
+    float density = 2;
+    float diameter = 3;
+    string extrenal_id = 4;
+    google.protobuf.Any extra = 5;
+    int64 id = 6;
+    string material = 7;
+    string multi_color_direction = 8;
+    string multi_color_hexes = 9;
+    string name = 10;
+    string registered = 11;
+    int64 settings_bed_temp = 12;
+    int64 settings_extruder_temp = 13;
+    float spool_weight = 14;
+    Vendor vendor = 15;
+    string weight = 16;
+}

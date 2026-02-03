@@ -9,12 +9,14 @@ from bambu_spoolman.bambu_mqtt import MqttHandler, stateful_printer_info
 from bambu_spoolman.broker.automatic_spool_switch import AutomaticSpoolSwitch
 from bambu_spoolman.broker.filament_usage_tracker import FilamentUsageTracker
 from bambu_spoolman.broker.server import run_server
+from bambu_spoolman.grpc.server import serve as run_grpc_server
 
 
 async def async_main():
     loop = asyncio.get_event_loop()
     tasks = []
     tasks.append(loop.create_task(run_server()))
+    tasks.append(loop.create_task(run_grpc_server()))
     mqtt = MqttHandler(
         os.environ.get("PRINTER_IP"),
         os.environ.get("PRINTER_SERIAL"),
