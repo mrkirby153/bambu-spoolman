@@ -10,7 +10,6 @@ UNKNOWN_TRAY = "00000000000000000000000000000000"
 
 
 class AutomaticSpoolSwitch:
-
     _INSTANCE = None
 
     @classmethod
@@ -22,7 +21,9 @@ class AutomaticSpoolSwitch:
     def __init__(self):
         self.spoolman_client = new_client()
         self.tray_mapping = None
-        self.auto_create_enabled = os.environ.get("SPOOLMAN_AUTO_CREATE_SPOOLS", "false").lower() == "true"
+        self.auto_create_enabled = (
+            os.environ.get("SPOOLMAN_AUTO_CREATE_SPOOLS", "false").lower() == "true"
+        )
 
     def on_message(self, _mqtt_handler, message):
         print_obj = message.get("print", {})
@@ -77,7 +78,7 @@ class AutomaticSpoolSwitch:
         prev_tray_mapping = self.tray_mapping.copy()
         ams = print_obj["ams"]
         ams_data = ams.get("ams", [])
-        
+
         for data in ams_data:
             for tray in data.get("tray", []):
                 tray_id = int(data["id"]) * 4 + int(tray["id"])
@@ -145,7 +146,12 @@ class AutomaticSpoolSwitch:
 
         try:
             self.spoolman_client.set_active_tray(spool_id, ams_num, tray_num)
-            logger.info("Set tray fields for spool {}: AMS={}, Tray={}", spool_id, ams_num, tray_num)
+            logger.info(
+                "Set tray fields for spool {}: AMS={}, Tray={}",
+                spool_id,
+                ams_num,
+                tray_num,
+            )
         except Exception as e:
             logger.error("Failed to set tray fields for spool {}: {}", spool_id, e)
 
@@ -179,4 +185,6 @@ class AutomaticSpoolSwitch:
                 self.spoolman_client.set_active_tray(spool_id, None, None)
                 logger.info("Cleared tray fields for spool {}", spool_id)
             except Exception as e:
-                logger.error("Failed to clear tray fields for spool {}: {}", spool_id, e)
+                logger.error(
+                    "Failed to clear tray fields for spool {}: {}", spool_id, e
+                )

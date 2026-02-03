@@ -28,6 +28,7 @@ def get_tray_count():
     else:
         return load_settings().get("tray_count", 0)
 
+
 @command
 def resync_trays():
     AutomaticSpoolSwitch.get_instance().sync()

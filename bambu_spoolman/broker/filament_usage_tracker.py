@@ -21,7 +21,6 @@ from bambu_spoolman.spoolman import new_client
 
 
 class FilamentUsageTracker:
-
     def __init__(self):
         self.spoolman_client = new_client()
         self.active_model = None

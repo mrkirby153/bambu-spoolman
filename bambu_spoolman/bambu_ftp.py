@@ -2,8 +2,8 @@ import ftplib
 import os
 import ssl
 import tempfile
-
 from pathlib import Path
+
 from loguru import logger
 
 
@@ -32,10 +32,10 @@ class ImplicitFTP_TLS(ftplib.FTP_TLS):
         )
         return conn, size
 
+
 def retrieve_3mf(filename):
     logger.debug("Retrieving cached 3mf file {}", filename)
     with ImplicitFTP_TLS() as ftp:
-
         ftp.set_pasv(True)
         ftp.connect(os.environ.get("PRINTER_IP"), 990, 5)
         ftp.login("bblp", os.environ.get("PRINTER_ACCESS_CODE"))

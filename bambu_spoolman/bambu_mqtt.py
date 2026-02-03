@@ -19,7 +19,6 @@ def recursive_merge(dict1, dict2):
 
 
 class StatefulPrinterInfo:
-
     def __init__(self):
         self._info = {}
         self.mqtt_handler = None
@@ -75,7 +74,6 @@ MAX_BACKOFF_DURATION = 60
 
 
 class MqttHandler(threading.Thread):
-
     def __init__(self, printer_ip, printer_serial, printer_access_code):
         self.printer_ip = printer_ip
         self.printer_serial = printer_serial

@@ -13,7 +13,6 @@ R = TypeVar("R")
 
 
 class CommandExecution[R]:
-
     def __init__(self, name, args, kwargs):
         self.command_name = name
         self.args = args
@@ -56,7 +55,7 @@ async def execute_command(command_name, args, kwargs):
 
 @overload
 def command(
-    func: Callable[P, Coroutine[Any, Any, R]]
+    func: Callable[P, Coroutine[Any, Any, R]],
 ) -> Callable[P, CommandExecution[R]]: ...
 
 

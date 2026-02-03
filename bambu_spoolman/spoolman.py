@@ -73,16 +73,18 @@ class SpoolmanClient:
                 verify=self.verify,
             )
             response.raise_for_status()
-            
+
             data = response.json()
             # Update cache
             self._external_filaments_cache = data
             self._external_filaments_cache_time = time.time()
             logger.info(f"Cached {len(data)} external filaments")
-            return data            
+            return data
         except Exception as e:
             logger.error(f"Exception getting external filaments: {e}")
-            return self._external_filaments_cache or []  # Return stale cache if available
+            return (
+                self._external_filaments_cache or []
+            )  # Return stale cache if available
 
     def get_spool(self, spool_id):
         """
@@ -113,7 +115,7 @@ class SpoolmanClient:
             verify=self.verify,
         )
         return response.json()
-    
+
     def lookup_by_tray_uuid(self, tray_uuid):
         """
         Looks up a spoolman spool by the tray uuid
@@ -125,12 +127,12 @@ class SpoolmanClient:
 
         for spool in all_spools:
             extra = spool.get("extra", {})
-            
+
             data = extra.get(extra_field, None)
-            if data is not None and data == f"\"{tray_uuid}\"":
+            if data is not None and data == f'"{tray_uuid}"':
                 return spool
         return None
-    
+
     def set_tray_uuid(self, spool_id, tray_uuid):
         """
         Sets a tray's uuid
@@ -144,7 +146,7 @@ class SpoolmanClient:
         # Get extra data
         extra = existing_spool.get("extra", {})
         # Set the new tray uuid
-        extra[extra_field] = f"\"{tray_uuid}\""
+        extra[extra_field] = f'"{tray_uuid}"'
         # Update the spool
         try:
             response = requests.patch(
@@ -174,7 +176,9 @@ class SpoolmanClient:
         """
         # Skip if neither environment variable is set
         if self.ams_field_name is None and self.tray_field_name is None:
-            logger.debug("Neither SPOOLMAN_AMS_FIELD_NAME nor SPOOLMAN_TRAY_FIELD_NAME set, skipping tray field update")
+            logger.debug(
+                "Neither SPOOLMAN_AMS_FIELD_NAME nor SPOOLMAN_TRAY_FIELD_NAME set, skipping tray field update"
+            )
             return False
 
         existing_spool = self.get_spool(spool_id)
@@ -188,16 +192,16 @@ class SpoolmanClient:
         # Set or clear the AMS field
         if self.ams_field_name:
             if ams_num is not None:
-                extra[self.ams_field_name] = f"\"{ams_num}\""
+                extra[self.ams_field_name] = f'"{ams_num}"'
             else:
-                extra[self.ams_field_name] = f"\"\""
+                extra[self.ams_field_name] = f'""'
 
         # Set or clear the tray field
         if self.tray_field_name:
             if tray_num is not None:
-                extra[self.tray_field_name] = f"\"{tray_num}\""
+                extra[self.tray_field_name] = f'"{tray_num}"'
             else:
-                extra[self.tray_field_name] = f"\"\""
+                extra[self.tray_field_name] = f'""'
 
         # Update the spool
         try:
@@ -207,10 +211,14 @@ class SpoolmanClient:
                 verify=self.verify,
             )
             response.raise_for_status()
-            logger.debug(f"Set AMS/tray fields for spool {spool_id}: AMS={ams_num}, Tray={tray_num}")
+            logger.debug(
+                f"Set AMS/tray fields for spool {spool_id}: AMS={ams_num}, Tray={tray_num}"
+            )
             return True
         except requests.exceptions.HTTPError as e:
-            logger.error(f"Failed to set AMS/tray fields for spool {spool_id}: status={e.response.status_code}, response={e.response.text}")
+            logger.error(
+                f"Failed to set AMS/tray fields for spool {spool_id}: status={e.response.status_code}, response={e.response.text}"
+            )
             return False
 
     def create_spool(self, filament_id, tray_uuid, initial_weight=1000):
@@ -241,8 +249,8 @@ class SpoolmanClient:
             response.raise_for_status()
 
             logger.info(f"Created spool with filament_id {filament_id}")
-            
-            return response.json()            
+
+            return response.json()
         except Exception as e:
             logger.error(f"Exception creating spool: {e}")
             return None
@@ -317,26 +325,32 @@ class SpoolmanClient:
         # Step 3: Try to match by sub_brand/specific name (e.g., "PETG HF")
         if filament_sub_brand and filament_sub_brand.strip():
             sub_brands = [
-                filament_sub_brand.replace(' ', '_').lower(),
-                filament_sub_brand.replace(' ', '+').lower(),
-                filament_sub_brand.replace(' ', '-').lower(),
+                filament_sub_brand.replace(" ", "_").lower(),
+                filament_sub_brand.replace(" ", "+").lower(),
+                filament_sub_brand.replace(" ", "-").lower(),
             ]
 
             for filament in color_matched:
                 filament_id = filament.get("id", "").lower()
                 for brand in sub_brands:
                     if brand in filament_id:
-                        logger.info(f"Found exact sub-brand match: {filament.get('name')} (id: {filament_id})")
+                        logger.info(
+                            f"Found exact sub-brand match: {filament.get('name')} (id: {filament_id})"
+                        )
                         return filament
 
         # Step 4: Filter by material type (fallback)
         for filament in color_matched:
             filament_material = filament.get("material", "").upper()
             if filament_material == filament_type.upper():
-                logger.info(f"Found material type match: {filament.get('name')} (id: {filament.get('id')})")
+                logger.info(
+                    f"Found material type match: {filament.get('name')} (id: {filament.get('id')})"
+                )
                 return filament
 
-        logger.debug(f"No external filament match for {filament_sub_brand} ({filament_type}) with color {color_hex}")
+        logger.debug(
+            f"No external filament match for {filament_sub_brand} ({filament_type}) with color {color_hex}"
+        )
         return None
 
     def create_filament_from_external(self, external_filament, tray_material=None):
@@ -363,7 +377,11 @@ class SpoolmanClient:
 
             # Use tray material if provided to preserve variants like "PLA Matte", "PLA Basic"
             # Otherwise fall back to external filament's material
-            material = tray_material if tray_material else external_filament.get("material", "PLA")
+            material = (
+                tray_material
+                if tray_material
+                else external_filament.get("material", "PLA")
+            )
 
             # Handle multi-color filaments
             # External filaments can have either color_hex (single) or color_hexes (multiple)
@@ -385,7 +403,9 @@ class SpoolmanClient:
             if color_hexes:
                 # Multi-color filament
                 filament_data["multi_color_hexes"] = ",".join(color_hexes)
-                filament_data["multi_color_direction"] = external_filament.get("multi_color_direction", "coaxial")
+                filament_data["multi_color_direction"] = external_filament.get(
+                    "multi_color_direction", "coaxial"
+                )
             elif color_hex:
                 # Single color filament
                 filament_data["color_hex"] = color_hex
@@ -403,7 +423,9 @@ class SpoolmanClient:
             logger.info(f"Created filament from external: {filament_data['name']}")
             return response.json()
         except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error creating filament from external: status={e.response.status_code}, response={e.response.text}")
+            logger.error(
+                f"HTTP error creating filament from external: status={e.response.status_code}, response={e.response.text}"
+            )
             return None
         except Exception as e:
             logger.error(f"Exception creating filament from external: {e}")
@@ -449,7 +471,7 @@ class SpoolmanClient:
 
         if filament is None:
             logger.info("Auto-creating spool failed due to no found filament")
-            return None            
+            return None
 
         # Create the spool with the tray UUID
         spool = self.create_spool(filament["id"], tray_uuid, weight_int)
@@ -481,7 +503,7 @@ class SpoolmanClient:
             response.raise_for_status()
 
             logger.info(f"Created vendor: {vendor_name}")
-            return response.json()            
+            return response.json()
         except Exception as e:
             logger.error(f"Exception in _get_or_create_vendor: {e}")
             return None
