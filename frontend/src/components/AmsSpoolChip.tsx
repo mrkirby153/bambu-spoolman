@@ -25,9 +25,6 @@ interface SpoolChipProps extends VariantProps<typeof spoolChip> {
 }
 
 function getBackgroundColor(spool: Spool) {
-  if (spool.filament.color_hex) {
-    return "#" + spool.filament.color_hex;
-  }
   if (
     spool.filament.multi_color_direction &&
     spool.filament.multi_color_hexes
@@ -54,6 +51,12 @@ function getBackgroundColor(spool: Spool) {
         .join(", ");
       return "linear-gradient(90deg, " + stops + ")";
     }
+  }
+  else if (spool.filament.color_hex) {
+    return "#" + spool.filament.color_hex;
+  }
+  else {
+    return "repeating-linear-gradient( 45deg, transparent 0 20px, red 20px 40px)";
   }
 }
 
