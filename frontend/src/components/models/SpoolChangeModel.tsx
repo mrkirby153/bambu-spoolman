@@ -137,8 +137,8 @@ function QrCodeButtonWrapper() {
   return <QrCodeButton />;
 }
 
-const urlRegex = /https?:\/\/.*\/(\d+)/;
-const spoolmanRegex = /web\+spoolman:s-(\d+)/;
+const urlRegex = /https?:\/\/.*\/(\d+)/i;
+const spoolmanRegex = /web\+spoolman:s-(\d+)/i;
 
 export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   const { close } = usePopup();
