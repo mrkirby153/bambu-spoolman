@@ -14,6 +14,7 @@ import Button from "../Button";
 import Input from "../Input";
 import useChangeStore from "@app/stores/spoolChangeStore";
 import { useAmsTrayUuid } from "@app/hooks/status";
+import SpoolsSelect from "../SpoolsSelect";
 
 export type FilamentChangeModelProps = {
   locked: boolean;
@@ -211,7 +212,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
     updateMutation.mutate({ trayId: props.trayId, spoolId: debouncedSpoolId });
   };
 
-  const onSpoolIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onSpoolIdChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement> ) => {
     updateMutation.reset();
     setError(null);
     setSpoolId(Number(e.target.value));
@@ -224,7 +225,7 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <div>
-        <label className="font-bold mr-1">Spool ID:</label>
+        <label className="font-bold mr-1">Spool ID:
         <Input
           type="number"
           className="border border-gray-300 p-1 rounded"
@@ -233,9 +234,15 @@ export default function SpoolChangeModel(props: FilamentChangeModelProps) {
           onChange={onSpoolIdChange}
           disabled={props.locked}
         />
+        <SpoolsSelect
+          className="border border-gray-300 p-1 rounded"
+          value={spoolId?.toString() || ""}
+          onChange={onSpoolIdChange}
+          disabled={props.locked}
+        />
         {error && <div className="text-red-500">{error}</div>}
+        </label>
       </div>
-
       {trayUuid && (
         <>
           <div className="font-bold mt-2">RFID Tag:</div>
