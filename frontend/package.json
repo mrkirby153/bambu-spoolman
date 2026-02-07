@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "proto-generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=lib/proto -I ../proto $(find ../proto -name \"*.proto\" -type f)"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.11.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -22,6 +24,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "ts-proto": "^2.11.2",
     "typescript": "^5"
   }
 }
