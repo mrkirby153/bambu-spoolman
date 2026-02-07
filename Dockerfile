@@ -6,13 +6,15 @@ WORKDIR /app
 
 FROM base AS builder
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev bash
 
 RUN python -m venv /venv
 
 COPY . .
 
 RUN uv sync --locked
+
+RUN scripts/update_protos.sh
 
 RUN uv build && /venv/bin/pip install dist/*.whl
 

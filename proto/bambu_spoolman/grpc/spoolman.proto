@@ -42,5 +42,6 @@ message Filament {
     int64 settings_extruder_temp = 13;
     float spool_weight = 14;
     Vendor vendor = 15;
-    string weight = 16;
+    float weight = 16;
+    string external_id = 17;
 }

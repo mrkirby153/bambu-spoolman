@@ -3,6 +3,7 @@ import time
 
 import requests
 import urllib3
+from google.protobuf.json_format import ParseDict
 from loguru import logger
 
 
@@ -522,3 +523,16 @@ def new_client(url=None) -> SpoolmanClient:
     if url is None:
         url = os.environ.get("SPOOLMAN_URL")
     return SpoolmanClient(url)
+
+
+spoolman_client_instance = None
+
+
+def instance():
+    """
+    Gets a singleton instance of the Spoolman client.
+    """
+    global spoolman_client_instance
+    if spoolman_client_instance is None:
+        spoolman_client_instance = new_client()
+    return spoolman_client_instance

@@ -11,9 +11,6 @@ service BambuSpoolman {
     // Gets the current number of trays
     rpc GetTrayCount(google.protobuf.Empty) returns (TrayCountResponse);
 
-    // Forces a synchronization of trays for automatic spool switching
-    rpc ResyncTrays(google.protobuf.Empty) returns (google.protobuf.Empty);
-
     // Gets the status of the printer
     rpc GetPrinterStatus(google.protobuf.Empty) returns (PrinterStatusResponse);
 
@@ -24,16 +21,16 @@ service BambuSpoolman {
     rpc GetSpools(GetSpoolsRequest) returns (GetSpoolsResponse);
 
     // Get application settings
-    rpc GetSettings(google.protobuf.Empty) returns (google.protobuf.Any);
+    rpc GetSettings(google.protobuf.Empty) returns (SettingsResponse);
 
     // Updates a tray
-    rpc UpdateTray(google.protobuf.Any) returns (google.protobuf.Empty);
+    rpc UpdateTray(UpdateTrayRequest) returns (google.protobuf.Empty);
 
     // Gets a tray by its UUID
-    rpc GetTrayByUUID(GetTrayByUUIDRequest) returns (google.protobuf.Any);
+    rpc GetSpoolByUUID(GetSpoolbyUUIDRequest) returns (Spool);
 
     // Sets a tray's UUID
-    rpc SetTrayUUID(SetTrayUUIDRequest) returns (google.protobuf.Empty);
+    rpc SetTrayUUID(SetSpoolUUIDRequest) returns (google.protobuf.Empty);
 }
 
 message TrayCountResponse {
@@ -59,11 +56,22 @@ message GetSpoolsResponse {
     repeated Spool spools = 1;
 }
 
-message GetTrayByUUIDRequest {
+message GetSpoolbyUUIDRequest {
     string uuid = 1;
 }
 
-message SetTrayUUIDRequest {
+message SetSpoolUUIDRequest {
     int64 spool_id = 1;
     string uuid = 2;
+}
+
+message UpdateTrayRequest {
+  int64 tray_id = 1;
+  int64 spool_id = 2;
+}
+
+message SettingsResponse {
+    map<string, int64> trays = 1;
+    int64 tray_count = 2;
+    repeated int64 locked_trays = 3;
 }
