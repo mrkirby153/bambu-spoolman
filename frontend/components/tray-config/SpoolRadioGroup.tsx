@@ -8,16 +8,27 @@ import { Label } from "../ui/label";
 import { SpoolChip } from "../SpoolChip";
 
 interface Props extends RadioGroupProps {
+  initialSpool: Spool | null;
   spools: Spool[];
+  selected: number[];
 }
 
-export function SpoolRadioGroup({ spools, ...props }: Props) {
+export function SpoolRadioGroup({
+  spools,
+  selected,
+  initialSpool,
+  ...props
+}: Props) {
   const spoolComponents = spools.map((spool) => (
     <div
       key={spool.id}
       className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent has-disabled:bg-transparent has-disabled:opacity-50 [&:has(:disabled)>label]:cursor-not-allowed [&>label]:cursor-pointer"
     >
-      <RadioGroupItem value={spool.id.toString()} id={`spool-${spool.id}`} />
+      <RadioGroupItem
+        value={spool.id.toString()}
+        id={`spool-${spool.id}`}
+        disabled={selected.includes(spool.id) && spool.id !== initialSpool?.id}
+      />
       <Label
         htmlFor={`spool-${spool.id}`}
         className="flex items-center gap-3 w-full"

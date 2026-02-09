@@ -16,12 +16,14 @@ type Props = {
   trayId: number;
   spool: Spool | null;
   allSpools: Spool[];
+  selectedSpools: number[];
 };
 
 export function TrayConfigForm(props: Props) {
   const [selectedSpool, setSelectedSpool] = useState(
     props.spool?.id.toString() ?? "",
   );
+  const [changed, setChanged] = useState(false);
   const router = useRouter();
 
   const [state, formAction, isPending] = useActionState(
@@ -54,14 +56,19 @@ export function TrayConfigForm(props: Props) {
         <SpoolRadioGroup
           spools={props.allSpools}
           value={selectedSpool}
-          onValueChange={(e) => setSelectedSpool(e)}
+          onValueChange={(e) => {
+            setSelectedSpool(e);
+            setChanged(true);
+          }}
           disabled={isPending}
+          selected={props.selectedSpools}
+          initialSpool={props.spool}
         />
         <Button
           variant="default"
           className="mt-4 float-right"
           type="submit"
-          disabled={isPending}
+          disabled={isPending || !changed}
         >
           <ButtonLoading loading={isPending} />
           Update
