@@ -28,7 +28,7 @@ export function SpoolRadioGroup({ spools, ...props }: Props) {
             {spool.filament?.material ?? "Unknown"}
           </div>
           <div className="text-sm text-muted-foreground">
-            ID: {spool.id} • {spool.remainingWeight}g remaining
+            ID: {spool.id} • {spool.remainingWeight.toFixed(0)}g remaining
           </div>
         </div>
       </Label>

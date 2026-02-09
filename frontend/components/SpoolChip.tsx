@@ -20,6 +20,7 @@ const spoolChip = cva(["border", "border-2"], {
 
 interface SpoolChipProps extends VariantProps<typeof spoolChip> {
   spool: Spool | null;
+  withPercentage?: boolean;
 }
 
 function getBackgroundColor(spool: Spool) {
@@ -54,7 +55,12 @@ function getBackgroundColor(spool: Spool) {
 
 export function SpoolChip(props: SpoolChipProps) {
   let percentage = 100;
-  if (props.spool && props.spool.remainingLength && props.spool.usedLength) {
+  if (
+    props.spool &&
+    props.withPercentage &&
+    props.spool.remainingLength &&
+    props.spool.usedLength
+  ) {
     const remainingLength = props.spool.remainingLength;
     const usedLength = props.spool.usedLength;
     percentage = (remainingLength / (remainingLength + usedLength)) * 100;

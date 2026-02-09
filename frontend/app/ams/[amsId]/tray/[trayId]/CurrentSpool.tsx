@@ -34,15 +34,23 @@ export async function CurrentSpool(props: Props) {
       </Alert>
     );
   }
+
+  let percentRemaining =
+    (spool.remainingLength / (spool.remainingLength + spool.usedLength)) * 100;
+  if (isNaN(percentRemaining)) {
+    percentRemaining = 0;
+  }
+
   return (
     <>
       <div className="flex items-center gap-4">
-        <SpoolChip spool={spool} size="large" />
+        <SpoolChip spool={spool} size="large" withPercentage />
         <div className="font-medium">
           {spool.filament?.material || "Unknown"}
         </div>
         <div className="text-sm text-muted-foreground">
-          {spool.remainingWeight}g remaining
+          {spool.remainingWeight.toFixed(0)}g remaining (
+          {percentRemaining.toFixed(1)}%)
         </div>
       </div>
 
