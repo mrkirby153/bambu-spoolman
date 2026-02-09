@@ -9,6 +9,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CurrentSpool } from "./CurrentSpool";
 import { SpoolConfiguration } from "./SpoolConfiguration";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 type Props = PageProps<"/ams/[amsId]/tray/[trayId]">;
 
@@ -52,6 +54,9 @@ async function TrayPage(props: Props) {
         </CardHeader>
         <CardContent>
           <SpoolConfiguration amsId={amsId} trayId={trayId} />
+          <Button variant="outline" className="mt-4 float-left" asChild>
+            <Link href="/">Back</Link>
+          </Button>
         </CardContent>
       </Card>
     </>
