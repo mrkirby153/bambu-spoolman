@@ -11,13 +11,45 @@ import { CurrentSpool } from "./CurrentSpool";
 import { SpoolConfiguration } from "./SpoolConfiguration";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = PageProps<"/ams/[amsId]/tray/[trayId]">;
 
 function SkeletonPage() {
   return (
     <>
-      <div>Loading...</div>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>Home</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <Skeleton className="w-20 h-5" />
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <Skeleton className="w-20 h-5" />
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Current Spool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="w-full h-24" />
+        </CardContent>
+      </Card>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Select Spool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="w-full h-48" />
+          <Button variant="outline" className="mt-4 float-left" asChild>
+            <Link href="/">Back</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </>
   );
 }
