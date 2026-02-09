@@ -1,0 +1,69 @@
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { CurrentSpool } from "./CurrentSpool";
+import { SpoolConfiguration } from "./SpoolConfiguration";
+
+type Props = PageProps<"/ams/[amsId]/tray/[trayId]">;
+
+function SkeletonPage() {
+  return (
+    <>
+      <div>Loading...</div>
+    </>
+  );
+}
+
+async function TrayPage(props: Props) {
+  const params = await props.params;
+  const amsId = Number(params.amsId) - 1;
+  const trayId = Number(params.trayId) - 1; // Convert to 0-indexed
+  if (trayId < amsId * 4 || trayId >= amsId * 4 + 4) {
+    notFound();
+  }
+  return (
+    <>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>Home</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>AMS {amsId + 1}</BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>Tray {(trayId % 4) + 1}</BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Current Spool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CurrentSpool amsId={amsId} trayId={trayId} />
+        </CardContent>
+      </Card>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Select Spool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SpoolConfiguration amsId={amsId} trayId={trayId} />
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+export default async function TrayPageOuter(props: Props) {
+  return (
+    <div className="container mx-auto p-4 max-w-2xl">
+      <Suspense fallback={<SkeletonPage />}>
+        <TrayPage {...props} />
+      </Suspense>
+    </div>
+  );
+}

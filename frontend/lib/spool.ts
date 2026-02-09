@@ -16,3 +16,12 @@ export async function getSpool(id: string) {
   }
   return response.spools[0];
 }
+
+export async function getAllSpools() {
+  "use cache";
+  cacheLife("seconds");
+  cacheTag("all-spools");
+
+  const response = await grpcClient.getSpools({});
+  return response.spools;
+}
