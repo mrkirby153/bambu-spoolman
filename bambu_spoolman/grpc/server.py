@@ -86,7 +86,7 @@ class BambuSpoolmanServicer(bambu_spoolman_pb2_grpc.BambuSpoolmanServicer):
         # Try both string and int keys for compatibility
         old_spool_id = trays.get(tray_id) or trays.get(tray_id_int)
 
-        if spool_id is None:
+        if spool_id == -1:
             # Clearing the tray assignment
             if tray_id in trays:
                 del trays[tray_id]

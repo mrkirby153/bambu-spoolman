@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { getSpool } from "@/lib/spool";
 import { AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ClearButton } from "./ClearButton";
 
 type Props = {
   amsId: number;
@@ -18,7 +18,7 @@ export async function CurrentSpool(props: Props) {
     return (
       <Alert>
         <AlertCircle />
-        <AlertDescription>No spool assigned to this tray.</AlertDescription>
+        <AlertDescription>No spool assigned to this slot</AlertDescription>
       </Alert>
     );
   }
@@ -56,9 +56,11 @@ export async function CurrentSpool(props: Props) {
 
       {locked && <Badge variant="destructive">Locked</Badge>}
       <div className="float-right">
-        <Button variant="outline" disabled={locked} className="ml-auto">
-          Remove Spool
-        </Button>
+        <ClearButton
+          amsId={props.amsId}
+          trayId={props.trayId}
+          locked={locked}
+        />
       </div>
     </>
   );

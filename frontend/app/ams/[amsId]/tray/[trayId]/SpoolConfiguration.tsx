@@ -23,5 +23,12 @@ export async function SpoolConfiguration(props: Props) {
       </Alert>
     );
   }
-  return <TrayConfigForm spool={spool} asllSpools={allSpopols} />;
+  return (
+    <TrayConfigForm
+      key={spool?.id}
+      spool={spool}
+      allSpools={allSpopols}
+      trayId={props.amsId * 4 + props.trayId}
+    />
+  );
 }

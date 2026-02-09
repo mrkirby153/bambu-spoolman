@@ -1,6 +1,11 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { grpcClient } from "./grpc";
 import { getSpool } from "./spool";
+
+export async function revalidateSettings() {
+  "use server";
+  revalidateTag("settings", "max");
+}
 
 export async function getSettings() {
   "use cache";
