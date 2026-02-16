@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package bambu_spoolman.grpc;
 import "google/protobuf/empty.proto";
-import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 import "bambu_spoolman/grpc/spoolman.proto";
 
 // Service definitions for BambuSpoolman
@@ -40,12 +40,13 @@ message TrayCountResponse {
 message PrinterStatusResponse {
     int64 last_updated = 1;
     bool connected = 2;
-    google.protobuf.Any status = 3;
+    google.protobuf.Struct status = 3;
 }
 
 message InfoResponse {
     string spoolman_url = 1;
     bool spoolman_valid = 2;
+    Features features = 3;
 }
 
 message GetSpoolsRequest {
@@ -74,4 +75,8 @@ message SettingsResponse {
     map<string, int64> trays = 1;
     int64 tray_count = 2;
     repeated int64 locked_trays = 3;
+}
+
+message Features {
+    bool tray_locking = 1;
 }

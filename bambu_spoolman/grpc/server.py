@@ -35,9 +35,13 @@ class BambuSpoolmanServicer(bambu_spoolman_pb2_grpc.BambuSpoolmanServicer):
         )
 
     async def Info(self, request: Empty, context: ServicerContext):
+        features = pb2.Features(
+            tray_locking=spoolman_instance().supports_tray_locking()
+        )
         return pb2.InfoResponse(
             spoolman_url=spoolman_instance().endpoint,
             spoolman_valid=spoolman_instance().validate(),
+            features=features,
         )
 
     async def GetSpools(self, request: pb2.GetSpoolsRequest, context: ServicerContext):
@@ -146,7 +150,7 @@ class BambuSpoolmanServicer(bambu_spoolman_pb2_grpc.BambuSpoolmanServicer):
             await context.abort(grpc.StatusCode.NOT_FOUND, "Spool not found")
         return ParseDict(spool, spoolman_pb2.Spool(), ignore_unknown_fields=True)
 
-    async def SetSpoolUUID(
+    async def SetTrayUUID(
         self, request: pb2.SetSpoolUUIDRequest, context: ServicerContext
     ):
         tray_uuid = request.uuid
@@ -158,6 +162,12 @@ class BambuSpoolmanServicer(bambu_spoolman_pb2_grpc.BambuSpoolmanServicer):
 
         if spool is None:
             await context.abort(grpc.StatusCode.NOT_FOUND, "Spool not found")
+
+        if not spoolman_instance().supports_tray_locking():
+            await context.abort(
+                grpc.StatusCode.UNIMPLEMENTED,
+                "Spoolman instance does not support tray locking",
+            )
 
         success = spoolman_instance().set_tray_uuid(spool_id, tray_uuid)
 

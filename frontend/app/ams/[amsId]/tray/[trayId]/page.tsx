@@ -12,6 +12,10 @@ import { SpoolConfiguration } from "./SpoolConfiguration";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getRfidTag } from "@/lib/printer";
+import { getSpoolInTray, isLocked } from "@/lib/settings";
+import { RfidLinkButton } from "./RfidLinkButton";
+import { supportsTrayLocking } from "@/lib/features";
 
 type Props = PageProps<"/ams/[amsId]/tray/[trayId]">;
 
@@ -54,6 +58,41 @@ function SkeletonPage() {
   );
 }
 
+type RfidProps = {
+  trayId: number;
+};
+
+async function RfidSettings({ trayId }: RfidProps) {
+  const rfidTag = await getRfidTag(trayId);
+  const locked = await isLocked(trayId);
+  const spool = await getSpoolInTray(trayId);
+
+  console.log(rfidTag, locked, spool);
+
+  if (!rfidTag || locked || !spool) {
+    return null;
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle>RFID Tag</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-foreground">
+          A Spool with an RFID tag is is detected. If you want to automatically
+          assign this spool to the tray when it&apos;s inserted, click the
+          button below.
+        </p>
+        <div className="mt-2 block">
+          RFID Tag: <pre className="font-mono inline">{rfidTag}</pre>
+        </div>
+        <RfidLinkButton spoolId={spool.id} uuid={rfidTag} />
+      </CardContent>
+    </Card>
+  );
+}
+
 async function TrayPage(props: Props) {
   const params = await props.params;
   const amsId = Number(params.amsId) - 1;
@@ -63,11 +102,13 @@ async function TrayPage(props: Props) {
 
   const minTray = amsId * 4;
   const maxTray = amsId * 4 + 4;
-  console.log(minTray, maxTray, trayId);
 
   if (trayId > maxTray || trayId < minTray) {
     notFound();
   }
+
+  const trayLockingSupported = await supportsTrayLocking();
+
   return (
     <>
       <Breadcrumb>
@@ -87,6 +128,7 @@ async function TrayPage(props: Props) {
           <CurrentSpool trayId={trayId} />
         </CardContent>
       </Card>
+      {trayLockingSupported && <RfidSettings trayId={trayId} />}
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Select Spool</CardTitle>

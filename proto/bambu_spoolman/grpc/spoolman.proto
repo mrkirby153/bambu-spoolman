@@ -1,12 +1,12 @@
 syntax = "proto3";
 package bambu_spoolman.grpc;
 
-import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 
 
 message Spool {
     bool archived = 1;
-    google.protobuf.Any extra = 2;
+    google.protobuf.Struct extra = 2;
     Filament filament = 3;
     int64 id = 4;
     float initial_weight = 5;
@@ -20,7 +20,7 @@ message Spool {
 
 message Vendor {
     string external_id = 1;
-    google.protobuf.Any extra = 2;
+    google.protobuf.Struct extra = 2;
     int64 id = 3;
     string name = 4;
     string registered = 5;
@@ -31,7 +31,7 @@ message Filament {
     float density = 2;
     float diameter = 3;
     string extrenal_id = 4;
-    google.protobuf.Any extra = 5;
+    google.protobuf.Struct extra = 5;
     int64 id = 6;
     string material = 7;
     string multi_color_direction = 8;

@@ -160,6 +160,9 @@ class SpoolmanClient:
         except requests.exceptions.HTTPError:
             return False
 
+    def supports_tray_locking(self):
+        return os.environ.get("SPOOLMAN_SPOOL_FIELD_NAME") is not None
+
     def set_active_tray(self, spool_id, ams_num=None, tray_num=None):
         """
         Sets the AMS and tray fields for a spool
@@ -350,7 +353,7 @@ class SpoolmanClient:
                 return filament
 
         logger.debug(
-            f"No external filament match for {filament_sub_brand} ({filament_type}) with color {color_hex}"
+            f"No external filament match for {filament_sub_brand} ({filament_type}) with color {color_hexes}"
         )
         return None
 

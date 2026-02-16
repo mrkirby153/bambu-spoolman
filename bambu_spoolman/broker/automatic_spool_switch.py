@@ -129,7 +129,12 @@ class AutomaticSpoolSwitch:
     def _lock_spool(self, tray_id, spool_id):
         settings = load_settings()
         trays = settings.get("trays", {})
+
+        # Remove any existing mapping for this tray
+        trays = {k: v for k, v in trays.items() if v != spool_id}
+
         trays[str(tray_id)] = spool_id
+
         settings["trays"] = trays
         settings["locked_trays"] = list(
             set(settings.get("locked_trays", []) + [tray_id])

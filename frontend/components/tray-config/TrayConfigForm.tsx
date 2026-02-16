@@ -3,26 +3,19 @@
 import { Spool } from "@/lib/proto/bambu_spoolman/grpc/spoolman";
 import { SpoolRadioGroup } from "./SpoolRadioGroup";
 import { Button, ButtonLoading } from "../ui/button";
-import { memo, useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import {
   updateTrayAssignment,
   type UpdateTrayAssignmentActionData,
 } from "./actions";
 import { Alert } from "../ui/alert";
-import {
-  AlertCircle,
-  MoveRight,
-  MoveRightIcon,
-  SearchIcon,
-} from "lucide-react";
+import { AlertCircle, SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { useCameraAvailable } from "@/lib/hooks/useCameraAvailable";
-import { Input } from "../ui/input";
 import {
   InputGroup,
   InputGroupAddon,
-  InputGroupButton,
   InputGroupInput,
 } from "../ui/input-group";
 

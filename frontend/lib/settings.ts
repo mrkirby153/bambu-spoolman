@@ -1,7 +1,6 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { grpcClient } from "./grpc";
 import { getSpool } from "./spool";
-import { getTrayIndex } from "./client/settings";
 
 export async function revalidateSettings() {
   "use server";
@@ -19,8 +18,7 @@ export async function getSettings() {
 
 /**
  * Gets the spool in a tray
- * @param ams A 0-indexed AMS number
- * @param tray A 0-indexed AMS number
+ * @param tray The tray to get
  * @returns The Spool in a tray, if any
  */
 export async function getSpoolInTray(tray: number) {
