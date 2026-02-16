@@ -3,7 +3,6 @@ import time
 
 import requests
 import urllib3
-from google.protobuf.json_format import ParseDict
 from loguru import logger
 
 
