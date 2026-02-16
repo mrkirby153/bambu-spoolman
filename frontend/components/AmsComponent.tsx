@@ -1,4 +1,5 @@
 import AmsTray from "./AmsTray";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 type Props = {
   id: number;
@@ -12,9 +13,13 @@ export default async function AmsComponent(props: Props) {
     slots.push(<AmsTray key={i} id={i} />);
   }
   return (
-    <div className="border border-black p-2 rounded-sm">
-      <div className="text-xl">AMS {props.id + 1}</div>
-      <div className="flex space-x-2 pt-2 flex-row">{slots}</div>
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>AMS {props.id + 1}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-4 flex-wrap justify-center">{slots}</div>
+      </CardContent>
+    </Card>
   );
 }

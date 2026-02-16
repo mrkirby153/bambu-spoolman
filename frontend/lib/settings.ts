@@ -1,6 +1,7 @@
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import { grpcClient } from "./grpc";
 import { getSpool } from "./spool";
+import { getTrayIndex } from "./client/settings";
 
 export async function revalidateSettings() {
   "use server";
@@ -16,21 +17,16 @@ export async function getSettings() {
   return response;
 }
 
-function getTrayIndex(ams: number, tray: number) {
-  return ams * 4 + tray;
-}
-
 /**
  * Gets the spool in a tray
  * @param ams A 0-indexed AMS number
  * @param tray A 0-indexed AMS number
  * @returns The Spool in a tray, if any
  */
-export async function getSpoolInTray(ams: number, tray: number) {
+export async function getSpoolInTray(ams: number | undefined, tray: number) {
   const settings = await getSettings();
 
-  const base = ams * 4;
-  const trayIndex = base + tray;
+  const trayIndex = ams !== undefined ? getTrayIndex(ams, tray) : tray;
 
   const spoolId = settings.trays[trayIndex];
   if (!spoolId) {
@@ -39,8 +35,8 @@ export async function getSpoolInTray(ams: number, tray: number) {
   return getSpool(spoolId.toString());
 }
 
-export async function isLocked(ams: number, tray: number) {
+export async function isLocked(ams: number | undefined, tray: number) {
   const settings = await getSettings();
-  const trayIndex = getTrayIndex(ams, tray);
+  const trayIndex = ams !== undefined ? getTrayIndex(ams, tray) : tray;
   return settings.lockedTrays.includes(trayIndex);
 }

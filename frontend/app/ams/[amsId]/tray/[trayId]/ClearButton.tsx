@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { clearSpool } from "./actions";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getTrayIndex } from "@/lib/client/settings";
 
 type Props = {
-  amsId: number;
+  amsId?: number;
   trayId: number;
   locked: boolean;
 };
@@ -17,7 +18,7 @@ export function ClearButton({ amsId, trayId, locked }: Props) {
   const handleClear = async () => {
     setLoading(true);
     try {
-      await clearSpool(amsId * 4 + trayId);
+      await clearSpool(getTrayIndex(amsId, trayId));
       router.refresh();
     } catch (error) {
       console.error("Failed to clear spool:", error);

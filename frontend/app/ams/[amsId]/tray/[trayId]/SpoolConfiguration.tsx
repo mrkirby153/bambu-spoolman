@@ -5,7 +5,7 @@ import { getAllSpools } from "@/lib/spool";
 import { AlertCircle } from "lucide-react";
 
 type Props = {
-  amsId: number;
+  amsId?: number;
   trayId: number;
 };
 
@@ -26,12 +26,16 @@ export async function SpoolConfiguration(props: Props) {
       </Alert>
     );
   }
+
+  const trayId =
+    props.amsId !== undefined ? props.amsId * 4 + props.trayId : props.trayId;
+
   return (
     <TrayConfigForm
       key={spool?.id}
       spool={spool}
       allSpools={allSpopols}
-      trayId={props.amsId * 4 + props.trayId}
+      trayId={trayId}
       selectedSpools={selectedSpools}
     />
   );

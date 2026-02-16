@@ -4,11 +4,12 @@ import { getSettings } from "@/lib/settings";
 import { getSpool } from "@/lib/spool";
 import { AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ClearButton } from "./ClearButton";
+import { ClearButton } from "../../app/ams/[amsId]/tray/[trayId]/ClearButton";
 
 type Props = {
-  amsId: number;
+  amsId?: number;
   trayId: number;
+  showClearButton?: boolean;
 };
 
 export async function CurrentSpool(props: Props) {
@@ -41,6 +42,8 @@ export async function CurrentSpool(props: Props) {
     percentRemaining = 0;
   }
 
+  const showClearButton = props.showClearButton ?? true;
+
   return (
     <>
       <div className="flex items-center gap-4">
@@ -56,11 +59,13 @@ export async function CurrentSpool(props: Props) {
 
       {locked && <Badge variant="destructive">Locked</Badge>}
       <div className="float-right">
-        <ClearButton
-          amsId={props.amsId}
-          trayId={props.trayId}
-          locked={locked}
-        />
+        {showClearButton && (
+          <ClearButton
+            amsId={props.amsId}
+            trayId={props.trayId}
+            locked={locked}
+          />
+        )}
       </div>
     </>
   );

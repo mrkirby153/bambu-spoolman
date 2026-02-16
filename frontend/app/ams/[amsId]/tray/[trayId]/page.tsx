@@ -7,7 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { CurrentSpool } from "./CurrentSpool";
+import { CurrentSpool } from "../../../../../components/tray-config/CurrentSpool";
 import { SpoolConfiguration } from "./SpoolConfiguration";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

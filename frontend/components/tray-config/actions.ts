@@ -25,6 +25,13 @@ export async function updateTrayAssignment(
 
   if (existingAssignment) {
     const [conflictTrayId] = existingAssignment;
+
+    if (conflictTrayId == "255") {
+      return {
+        error: "This spool is already assigned to the External Spool Holder",
+      };
+    }
+
     return {
       error: `This spool is already assigned to Spool ${(Number(conflictTrayId) % 4) + 1} in AMS ${Math.floor(Number(conflictTrayId) / 4) + 1}`,
     };
