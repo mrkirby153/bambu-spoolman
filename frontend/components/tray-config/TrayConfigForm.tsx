@@ -3,16 +3,28 @@
 import { Spool } from "@/lib/proto/bambu_spoolman/grpc/spoolman";
 import { SpoolRadioGroup } from "./SpoolRadioGroup";
 import { Button, ButtonLoading } from "../ui/button";
-import { useActionState, useState } from "react";
+import { memo, useActionState, useMemo, useState } from "react";
 import {
   updateTrayAssignment,
   type UpdateTrayAssignmentActionData,
 } from "./actions";
 import { Alert } from "../ui/alert";
-import { AlertCircle } from "lucide-react";
+import {
+  AlertCircle,
+  MoveRight,
+  MoveRightIcon,
+  SearchIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { IDetectedBarcode, Scanner } from "@yudiel/react-qr-scanner";
 import { useCameraAvailable } from "@/lib/hooks/useCameraAvailable";
+import { Input } from "../ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "../ui/input-group";
 
 const URL_REGEX = /https?:\/\/.*\/(\d+)/i;
 const SPOOL_ID_REGEX = /web\+spoolman:s-(\d+)/i;
@@ -53,6 +65,7 @@ export function TrayConfigForm(props: Props) {
   const [changed, setChanged] = useState(false);
   const [qrScanning, setQrScanning] = useState(false);
   const [qrScanError, setQrScanError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const cameraAvailable = useCameraAvailable();
   const router = useRouter();
 
@@ -107,6 +120,24 @@ export function TrayConfigForm(props: Props) {
     setQrScanning(false);
   };
 
+  const filteredSpools = useMemo(() => {
+    if (!searchQuery) {
+      return props.allSpools;
+    }
+    // Filter spools based on the following criteria:
+    // 1. Spool id
+    // 2. Material
+    // 3. Vendor
+    return props.allSpools.filter((spool) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        spool.id.toString().includes(query) ||
+        spool.filament?.material.toLowerCase().includes(query) ||
+        spool.filament?.vendor?.name.toLowerCase().includes(query)
+      );
+    });
+  }, [searchQuery, props.allSpools]);
+
   return (
     <>
       {qrScanError && (
@@ -133,6 +164,17 @@ export function TrayConfigForm(props: Props) {
               Scan QR Code
             </Button>
           )}
+          <InputGroup className="w-full mb-3">
+            <InputGroupInput
+              placeholder="Search for a spool"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+          </InputGroup>
+
           <form action={formAction}>
             {state?.error && (
               <Alert variant="destructive" className="mb-5">
@@ -141,7 +183,7 @@ export function TrayConfigForm(props: Props) {
               </Alert>
             )}
             <SpoolRadioGroup
-              spools={props.allSpools}
+              spools={filteredSpools}
               value={selectedSpool}
               onValueChange={(e) => {
                 setSelectedSpool(e);
