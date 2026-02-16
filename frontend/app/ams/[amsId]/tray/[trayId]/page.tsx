@@ -57,8 +57,15 @@ function SkeletonPage() {
 async function TrayPage(props: Props) {
   const params = await props.params;
   const amsId = Number(params.amsId) - 1;
-  const trayId = Number(params.trayId) - 1; // Convert to 0-indexed
-  if (trayId < amsId * 4 || trayId >= amsId * 4 + 4) {
+  const rawTrayId = Number(params.trayId) - 1; // Convert to 0-indexed
+
+  const trayId = amsId * 4 + rawTrayId;
+
+  const minTray = amsId * 4;
+  const maxTray = amsId * 4 + 4;
+  console.log(minTray, maxTray, trayId);
+
+  if (trayId > maxTray || trayId < minTray) {
     notFound();
   }
   return (
@@ -69,7 +76,7 @@ async function TrayPage(props: Props) {
           <BreadcrumbSeparator />
           <BreadcrumbItem>AMS {amsId + 1}</BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>Tray {(trayId % 4) + 1}</BreadcrumbItem>
+          <BreadcrumbItem>Tray {(rawTrayId % 4) + 1}</BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       <Card className="mt-6">
@@ -77,7 +84,7 @@ async function TrayPage(props: Props) {
           <CardTitle>Current Spool</CardTitle>
         </CardHeader>
         <CardContent>
-          <CurrentSpool amsId={amsId} trayId={trayId} />
+          <CurrentSpool trayId={trayId} />
         </CardContent>
       </Card>
       <Card className="mt-6">
@@ -85,7 +92,7 @@ async function TrayPage(props: Props) {
           <CardTitle>Select Spool</CardTitle>
         </CardHeader>
         <CardContent>
-          <SpoolConfiguration amsId={amsId} trayId={trayId} />
+          <SpoolConfiguration trayId={trayId} />
           <Button variant="outline" className="mt-4 float-left" asChild>
             <Link href="/">Back</Link>
           </Button>

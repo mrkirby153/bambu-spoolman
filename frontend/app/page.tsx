@@ -65,7 +65,14 @@ async function ExternalSpoolConfiguration() {
 }
 
 async function AmsConfiguration() {
-  return <AmsComponent id={0} />;
+  const settings = await getSettings();
+  const trayCount = settings.trayCount;
+  const amsCount = Math.ceil(trayCount / 4);
+  const components = [];
+  for (let i = 0; i < amsCount; i++) {
+    components.push(<AmsComponent key={i} id={i} />);
+  }
+  return components;
 }
 
 async function HomePage() {

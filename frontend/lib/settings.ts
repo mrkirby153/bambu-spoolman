@@ -23,20 +23,17 @@ export async function getSettings() {
  * @param tray A 0-indexed AMS number
  * @returns The Spool in a tray, if any
  */
-export async function getSpoolInTray(ams: number | undefined, tray: number) {
+export async function getSpoolInTray(tray: number) {
   const settings = await getSettings();
 
-  const trayIndex = ams !== undefined ? getTrayIndex(ams, tray) : tray;
-
-  const spoolId = settings.trays[trayIndex];
+  const spoolId = settings.trays[tray];
   if (!spoolId) {
     return null;
   }
   return getSpool(spoolId.toString());
 }
 
-export async function isLocked(ams: number | undefined, tray: number) {
+export async function isLocked(tray: number) {
   const settings = await getSettings();
-  const trayIndex = ams !== undefined ? getTrayIndex(ams, tray) : tray;
-  return settings.lockedTrays.includes(trayIndex);
+  return settings.lockedTrays.includes(tray);
 }

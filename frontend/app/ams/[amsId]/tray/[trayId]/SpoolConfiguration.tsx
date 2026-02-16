@@ -5,17 +5,16 @@ import { getAllSpools } from "@/lib/spool";
 import { AlertCircle } from "lucide-react";
 
 type Props = {
-  amsId?: number;
   trayId: number;
 };
 
 export async function SpoolConfiguration(props: Props) {
-  const spool = await getSpoolInTray(props.amsId, props.trayId);
+  const spool = await getSpoolInTray(props.trayId);
   const allSpopols = await getAllSpools();
   const selectedSpools = await getSettings().then((settings) =>
     Object.values(settings.trays),
   );
-  if (await isLocked(props.amsId, props.trayId)) {
+  if (await isLocked(props.trayId)) {
     return (
       <Alert>
         <AlertCircle />
@@ -27,15 +26,12 @@ export async function SpoolConfiguration(props: Props) {
     );
   }
 
-  const trayId =
-    props.amsId !== undefined ? props.amsId * 4 + props.trayId : props.trayId;
-
   return (
     <TrayConfigForm
       key={spool?.id}
       spool={spool}
       allSpools={allSpopols}
-      trayId={trayId}
+      trayId={props.trayId}
       selectedSpools={selectedSpools}
     />
   );

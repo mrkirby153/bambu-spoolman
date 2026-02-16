@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { ClearButton } from "../../app/ams/[amsId]/tray/[trayId]/ClearButton";
 
 type Props = {
-  amsId?: number;
   trayId: number;
   showClearButton?: boolean;
 };
@@ -60,11 +59,7 @@ export async function CurrentSpool(props: Props) {
       {locked && <Badge variant="destructive">Locked</Badge>}
       <div className="float-right">
         {showClearButton && (
-          <ClearButton
-            amsId={props.amsId}
-            trayId={props.trayId}
-            locked={locked}
-          />
+          <ClearButton trayId={props.trayId} locked={locked} />
         )}
       </div>
     </>
