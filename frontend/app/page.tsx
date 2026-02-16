@@ -11,6 +11,7 @@ import { CurrentSpool } from "@/components/tray-config/CurrentSpool";
 import { getSettings } from "@/lib/settings";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { headers } from "next/headers";
 
 function SkeletonPage() {
   return (
@@ -76,6 +77,8 @@ async function AmsConfiguration() {
 }
 
 async function HomePage() {
+  // Force the page to be dynamic
+  await headers();
   return (
     <>
       <Breadcrumb>

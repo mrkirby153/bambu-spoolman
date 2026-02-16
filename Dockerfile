@@ -21,24 +21,32 @@ RUN uv build && /venv/bin/pip install dist/*.whl
 
 FROM node:23-alpine AS frontend_builder
 
+RUN apk add --no-cache protobuf protobuf-dev tree
+
 WORKDIR /app
 
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install
+COPY frontend/package.json frontend/pnpm-lock.yaml /app/frontend/
+RUN cd /app/frontend && npm install -g pnpm && pnpm install
 
-COPY frontend .
+COPY frontend /app/frontend
+COPY proto /app/proto
 
-RUN pnpm build
+
+RUN cd /app/frontend && pnpm proto-generate && pnpm build
+# Remove node_modules
+RUN rm -rf /app/frontend/node_modules
 
 FROM base AS app
 
-RUN apk add --no-cache nginx supervisor
+RUN apk add --no-cache supervisor nodejs pnpm
 
 ENV LOGURU_LEVEL=INFO
 
 COPY --from=builder /venv /venv
-COPY --from=frontend_builder /app/dist /app/dist
-COPY conf/nginx.conf /etc/nginx/http.d/default.conf
+COPY --from=frontend_builder /app/frontend /app/frontend
+
+RUN cd /app/frontend && pnpm install --production
+
 COPY conf/supervisord.conf /app/supervisord.conf
 
 CMD ["supervisord", "-c", "/app/supervisord.conf"]

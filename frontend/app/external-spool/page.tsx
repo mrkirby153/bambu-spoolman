@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { headers } from "next/headers";
 
 function SkeletonPage() {
   return (
@@ -32,7 +33,9 @@ function SkeletonPage() {
   );
 }
 
-function ExternalSpoolConfiguration() {
+async function ExternalSpoolConfiguration() {
+  // Force the page to be dynamic
+  await headers();
   return (
     <>
       <Card className="mt-6">

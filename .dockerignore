@@ -1,4 +1,6 @@
 __pycache__/
 
 frontend/node_modules
+frontend/.next
 .venv
+.env
