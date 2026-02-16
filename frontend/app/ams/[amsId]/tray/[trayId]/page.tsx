@@ -67,8 +67,6 @@ async function RfidSettings({ trayId }: RfidProps) {
   const locked = await isLocked(trayId);
   const spool = await getSpoolInTray(trayId);
 
-  console.log(rfidTag, locked, spool);
-
   if (!rfidTag || locked || !spool) {
     return null;
   }

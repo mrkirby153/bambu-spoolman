@@ -46,16 +46,18 @@ export function SpoolRadioGroup({
     </div>
   ));
   return (
-    <RadioGroup {...props}>
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {spools.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No spools found
-          </div>
-        ) : (
-          spoolComponents
-        )}
+    <div className="relative h-96">
+      <div className="absolute inset-0 overflow-y-auto overscroll-contain">
+        <RadioGroup {...props} className="space-y-3">
+          {spools.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No spools found
+            </div>
+          ) : (
+            spoolComponents
+          )}
+        </RadioGroup>
       </div>
-    </RadioGroup>
+    </div>
   );
 }
