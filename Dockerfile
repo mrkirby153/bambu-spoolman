@@ -41,6 +41,7 @@ RUN apk add --no-cache supervisor nodejs pnpm
 ENV LOGURU_LEVEL=INFO
 
 COPY --from=builder /venv /venv
+COPY --from=frontend_builder /app/frontend/public /app/frontend/public
 COPY --from=frontend_builder /app/frontend/.next/standalone /app/frontend
 COPY --from=frontend_builder /app/frontend/.next/static /app/frontend/.next/static
 
