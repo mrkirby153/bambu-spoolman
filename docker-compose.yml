@@ -7,7 +7,7 @@ services:
     volumes:
       - config:${BAMBU_SPOOLMAN_CONFIG}
     ports:
-      - ${BAMBU_SPOOLMAN_PORT}:80
+      - ${BAMBU_SPOOLMAN_PORT}:3000
 volumes:
   config:
     driver: local
