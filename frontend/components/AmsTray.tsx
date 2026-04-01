@@ -24,7 +24,7 @@ async function InnerAmsTray({ id }: Props) {
 
   return (
     <Link href={`/ams/${Math.floor(id / 4) + 1}/tray/${(id % 4) + 1}`}>
-      <SpoolChip spool={spool} size="large" />
+      <SpoolChip spool={spool} size="large" withPercentage />
       {material && <div className="text-center">{material}</div>}
     </Link>
   );
