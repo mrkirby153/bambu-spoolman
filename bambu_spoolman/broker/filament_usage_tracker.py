@@ -257,14 +257,14 @@ class FilamentUsageTracker:
             if model_path.startswith(p):
                 model_path = model_path.removeprefix(p)
                 break
-        # P2S exposes eMMC under /cache/ instead of /emmc/
-        if model_path.startswith("emmc/"):
-            result = retrieve_3mf(model_path)  # Try original path first (older printers)
-            if result is None:
-                logger.debug("eMMC path failed, retrying as cache/ (P2S fallback)")
-                model_path = "cache/" + model_path.removeprefix("emmc/")
-                return retrieve_3mf(model_path)
-            return result
+                
+        result = retrieve_3mf(model_path)  # Try original path first (older printers)
+        if result is None:
+            # USB storage backup for P2S printers
+            logger.debug("eMMC path failed, retrying as cache/ (P2S fallback)")
+            model_path = "cache/" + model_path.removeprefix("emmc/")
+            return retrieve_3mf(model_path)
+        return result
 
     def _load_model(self, model_path, gcode_file):
         gcode = extract_gcode(model_path, gcode_file)
