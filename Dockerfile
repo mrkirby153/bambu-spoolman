@@ -26,7 +26,7 @@ RUN apk add --no-cache protobuf protobuf-dev tree
 WORKDIR /app
 
 COPY frontend/package.json frontend/pnpm-lock.yaml /app/frontend/
-RUN cd /app/frontend && npm install -g pnpm && pnpm install
+RUN cd /app/frontend && npm install -g pnpm@10 && pnpm install
 
 COPY frontend /app/frontend
 COPY proto /app/proto
