@@ -10,7 +10,7 @@ const spoolChip = cva(["border", "border-2"], {
     },
     active: {
       true: ["border-yellow-500"],
-      false: ["border-black"],
+      false: ["border-foreground/70"],
     },
   },
   defaultVariants: {
